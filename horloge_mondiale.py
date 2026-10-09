@@ -44,83 +44,42 @@ CONFIG = os.path.join(os.path.expanduser("~"), "horloge_mondiale.json")
 GELE = getattr(sys, "frozen", False)  # True dans l'exécutable PyInstaller
 
 VILLES_DEFAUT = [
-    {"nom": "France", "tz": "Europe/Paris", "lat": 48.86, "lon": 2.35},
-    {"nom": "Royaume-Uni", "tz": "Europe/London", "lat": 51.51, "lon": -0.13},
-    {"nom": "USA Est", "tz": "America/New_York", "lat": 40.71, "lon": -74.01},
-    {"nom": "USA Ouest", "tz": "America/Los_Angeles", "lat": 34.05, "lon": -118.24},
-    {"nom": "Brésil", "tz": "America/Sao_Paulo", "lat": -23.55, "lon": -46.63},
-    {"nom": "Alaska", "tz": "America/Anchorage", "lat": 61.22, "lon": -149.90},
-    {"nom": "Hawaï", "tz": "Pacific/Honolulu", "lat": 21.31, "lon": -157.86},
-    {"nom": "Russie (Moscou)", "tz": "Europe/Moscow", "lat": 55.76, "lon": 37.62},
-    {"nom": "Émirats", "tz": "Asia/Dubai", "lat": 25.20, "lon": 55.27},
-    {"nom": "Inde", "tz": "Asia/Kolkata", "lat": 28.61, "lon": 77.21},
-    {"nom": "Chine", "tz": "Asia/Shanghai", "lat": 39.90, "lon": 116.40},
-    {"nom": "Japon", "tz": "Asia/Tokyo", "lat": 35.68, "lon": 139.69},
-    {"nom": "Australie Est", "tz": "Australia/Sydney", "lat": -33.87, "lon": 151.21},
-    {"nom": "Nouvelle-Zélande", "tz": "Pacific/Auckland", "lat": -41.29, "lon": 174.78},
-    {"nom": "Afrique du Sud", "tz": "Africa/Johannesburg", "lat": -26.20, "lon": 28.05},
-    {"nom": "La Réunion", "tz": "Indian/Reunion", "lat": -20.88, "lon": 55.45},
+    {"id": "FR", "tz": "Europe/Paris", "lat": 48.86, "lon": 2.35},
+    {"id": "GB", "tz": "Europe/London", "lat": 51.51, "lon": -0.13},
+    {"id": "US_E", "tz": "America/New_York", "lat": 40.71, "lon": -74.01},
+    {"id": "US_O", "tz": "America/Los_Angeles", "lat": 34.05, "lon": -118.24},
+    {"id": "BR", "tz": "America/Sao_Paulo", "lat": -23.55, "lon": -46.63},
+    {"id": "US_AK", "tz": "America/Anchorage", "lat": 61.22, "lon": -149.90},
+    {"id": "US_HI", "tz": "Pacific/Honolulu", "lat": 21.31, "lon": -157.86},
+    {"id": "RU", "tz": "Europe/Moscow", "lat": 55.76, "lon": 37.62},
+    {"id": "AE", "tz": "Asia/Dubai", "lat": 25.20, "lon": 55.27},
+    {"id": "IN", "tz": "Asia/Kolkata", "lat": 28.61, "lon": 77.21},
+    {"id": "CN", "tz": "Asia/Shanghai", "lat": 39.90, "lon": 116.40},
+    {"id": "JP", "tz": "Asia/Tokyo", "lat": 35.68, "lon": 139.69},
+    {"id": "AU_E", "tz": "Australia/Sydney", "lat": -33.87, "lon": 151.21},
+    {"id": "NZ", "tz": "Pacific/Auckland", "lat": -41.29, "lon": 174.78},
+    {"id": "ZA", "tz": "Africa/Johannesburg", "lat": -26.20, "lon": 28.05},
+    {"id": "RE", "tz": "Indian/Reunion", "lat": -20.88, "lon": 55.45},
 ]
 
-# Anciens noms de villes (version précédente) -> noms de pays
+# Anciens noms de villes (toute première version) -> id
 ANCIENS_NOMS = {
-    "Paris": "France", "Londres": "Royaume-Uni", "New York": "USA Est",
-    "Los Angeles": "USA Ouest", "São Paulo": "Brésil", "Anchorage": "Alaska",
-    "Honolulu": "Hawaï", "Moscou": "Russie (Moscou)", "Dubaï": "Émirats",
-    "New Delhi": "Inde", "Pékin": "Chine", "Tokyo": "Japon",
-    "Sydney": "Australie Est", "Wellington": "Nouvelle-Zélande",
-    "Johannesburg": "Afrique du Sud", "Réunion": "La Réunion",
-}
-
-PAYS_FR = {
-    "FR": "France", "GB": "Royaume-Uni", "IE": "Irlande", "BE": "Belgique",
-    "NL": "Pays-Bas", "LU": "Luxembourg", "DE": "Allemagne", "CH": "Suisse",
-    "AT": "Autriche", "IT": "Italie", "ES": "Espagne", "PT": "Portugal",
-    "MC": "Monaco", "AD": "Andorre", "DK": "Danemark", "NO": "Norvège",
-    "SE": "Suède", "FI": "Finlande", "IS": "Islande", "PL": "Pologne",
-    "CZ": "Tchéquie", "SK": "Slovaquie", "HU": "Hongrie", "RO": "Roumanie",
-    "BG": "Bulgarie", "GR": "Grèce", "HR": "Croatie", "SI": "Slovénie",
-    "RS": "Serbie", "BA": "Bosnie-Herzégovine", "ME": "Monténégro",
-    "MK": "Macédoine du Nord", "AL": "Albanie", "UA": "Ukraine",
-    "BY": "Biélorussie", "MD": "Moldavie", "LT": "Lituanie", "LV": "Lettonie",
-    "EE": "Estonie", "RU": "Russie", "TR": "Turquie", "CY": "Chypre",
-    "MT": "Malte", "US": "États-Unis", "CA": "Canada", "MX": "Mexique",
-    "CU": "Cuba", "BR": "Brésil", "AR": "Argentine", "CL": "Chili",
-    "PE": "Pérou", "CO": "Colombie", "VE": "Venezuela", "UY": "Uruguay",
-    "PY": "Paraguay", "BO": "Bolivie", "EC": "Équateur", "GF": "Guyane",
-    "GP": "Guadeloupe", "MQ": "Martinique", "PM": "Saint-Pierre-et-Miquelon",
-    "RE": "La Réunion", "YT": "Mayotte", "NC": "Nouvelle-Calédonie",
-    "PF": "Polynésie française", "WF": "Wallis-et-Futuna", "MA": "Maroc",
-    "DZ": "Algérie", "TN": "Tunisie", "LY": "Libye", "EG": "Égypte",
-    "SN": "Sénégal", "CI": "Côte d'Ivoire", "CM": "Cameroun", "NG": "Nigeria",
-    "KE": "Kenya", "ET": "Éthiopie", "ZA": "Afrique du Sud", "MG": "Madagascar",
-    "MU": "Maurice", "CD": "RD Congo", "CG": "Congo", "GA": "Gabon",
-    "ML": "Mali", "NE": "Niger", "TD": "Tchad", "SA": "Arabie saoudite",
-    "AE": "Émirats arabes unis", "QA": "Qatar", "KW": "Koweït", "IL": "Israël",
-    "LB": "Liban", "JO": "Jordanie", "SY": "Syrie", "IQ": "Irak", "IR": "Iran",
-    "AF": "Afghanistan", "PK": "Pakistan", "IN": "Inde", "NP": "Népal",
-    "BD": "Bangladesh", "LK": "Sri Lanka", "CN": "Chine", "HK": "Hong Kong",
-    "TW": "Taïwan", "JP": "Japon", "KR": "Corée du Sud", "KP": "Corée du Nord",
-    "MN": "Mongolie", "TH": "Thaïlande", "VN": "Viêt Nam", "KH": "Cambodge",
-    "LA": "Laos", "MY": "Malaisie", "SG": "Singapour", "ID": "Indonésie",
-    "PH": "Philippines", "AU": "Australie", "NZ": "Nouvelle-Zélande",
-    "FJ": "Fidji", "KZ": "Kazakhstan", "UZ": "Ouzbékistan", "GE": "Géorgie",
-    "AM": "Arménie", "AZ": "Azerbaïdjan", "GL": "Groenland", "AQ": "Antarctique",
+    "Paris": "FR", "Londres": "GB", "New York": "US_E", "Los Angeles": "US_O",
+    "São Paulo": "BR", "Anchorage": "US_AK", "Honolulu": "US_HI", "Moscou": "RU",
+    "Dubaï": "AE", "New Delhi": "IN", "Pékin": "CN", "Tokyo": "JP", "Sydney": "AU_E",
+    "Wellington": "NZ", "Johannesburg": "ZA", "Réunion": "RE",
 }
 
 CONFIG_DEFAUT = {
     "villes": VILLES_DEFAUT,
-    "indicatif": "F4GOP",
-    "locator": "IN98QR",
+    "indicatif": "",
+    "locator": "",
     "vue": "villes",
     "secondes": False,
     "premier_plan": False,
     "compact_pos": None,
 }
 
-JOURS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
-MOIS = ["jan", "fév", "mar", "avr", "mai", "juin",
-        "juil", "août", "sep", "oct", "nov", "déc"]
 
 # Couleurs (thème sombre « tableau de bord »)
 FOND = "#0d1117"
@@ -325,6 +284,534 @@ ICONE_PNG = (
 
 
 
+# Noms de pays (CLDR via Babel) : code ISO -> nom, par langue
+NOMS_PAYS = {
+    "fr": (
+        "AD=Andorre|AE=Émirats arabes unis|AF=Afghanistan|AG=Antigua-et-Barbuda|AI=Anguilla|AL=Alba"
+        "nie|AM=Arménie|AO=Angola|AQ=Antarctique|AR=Argentine|AS=Samoa américaines|AT=Autriche|AU=A"
+        "ustralie|AW=Aruba|AX=Îles Åland|AZ=Azerbaïdjan|BA=Bosnie-Herzégovine|BB=Barbade|BD=Banglad"
+        "esh|BE=Belgique|BF=Burkina Faso|BG=Bulgarie|BH=Bahreïn|BI=Burundi|BJ=Bénin|BL=Saint-Barthé"
+        "lemy|BM=Bermudes|BN=Brunei|BO=Bolivie|BQ=Pays-Bas caribéens|BR=Brésil|BS=Bahamas|BT=Bhouta"
+        "n|BV=Île Bouvet|BW=Botswana|BY=Biélorussie|BZ=Belize|CA=Canada|CC=Îles Cocos|CD=Congo-Kins"
+        "hasa|CF=République centrafricaine|CG=Congo-Brazzaville|CH=Suisse|CI=Côte d’Ivoire|CK=Îles "
+        "Cook|CL=Chili|CM=Cameroun|CN=Chine|CO=Colombie|CR=Costa Rica|CU=Cuba|CV=Cap-Vert|CW=Curaça"
+        "o|CX=Île Christmas|CY=Chypre|CZ=Tchéquie|DE=Allemagne|DJ=Djibouti|DK=Danemark|DM=Dominique"
+        "|DO=République dominicaine|DZ=Algérie|EC=Équateur|EE=Estonie|EG=Égypte|EH=Sahara occidenta"
+        "l|ER=Érythrée|ES=Espagne|ET=Éthiopie|FI=Finlande|FJ=Fidji|FK=Îles Malouines|FM=Micronésie|"
+        "FO=Îles Féroé|FR=France|GA=Gabon|GB=Royaume-Uni|GD=Grenade|GE=Géorgie|GF=Guyane française|"
+        "GG=Guernesey|GH=Ghana|GI=Gibraltar|GL=Groenland|GM=Gambie|GN=Guinée|GP=Guadeloupe|GQ=Guiné"
+        "e équatoriale|GR=Grèce|GS=Géorgie du Sud-et-les Îles Sandwich du Sud|GT=Guatemala|GU=Guam|"
+        "GW=Guinée-Bissau|GY=Guyana|HK=R.A.S. chinoise de Hong Kong|HM=Îles Heard-et-MacDonald|HN=H"
+        "onduras|HR=Croatie|HT=Haïti|HU=Hongrie|ID=Indonésie|IE=Irlande|IL=Israël|IM=Île de Man|IN="
+        "Inde|IO=Territoire britannique de l’océan Indien|IQ=Irak|IR=Iran|IS=Islande|IT=Italie|JE=J"
+        "ersey|JM=Jamaïque|JO=Jordanie|JP=Japon|KE=Kenya|KG=Kirghizstan|KH=Cambodge|KI=Kiribati|KM="
+        "Comores|KN=Saint-Christophe-et-Niévès|KP=Corée du Nord|KR=Corée du Sud|KW=Koweït|KY=Îles C"
+        "aïmans|KZ=Kazakhstan|LA=Laos|LB=Liban|LC=Sainte-Lucie|LI=Liechtenstein|LK=Sri Lanka|LR=Lib"
+        "eria|LS=Lesotho|LT=Lituanie|LU=Luxembourg|LV=Lettonie|LY=Libye|MA=Maroc|MC=Monaco|MD=Molda"
+        "vie|ME=Monténégro|MF=Saint-Martin|MG=Madagascar|MH=Îles Marshall|MK=Macédoine du Nord|ML=M"
+        "ali|MM=Myanmar (Birmanie)|MN=Mongolie|MO=R.A.S. chinoise de Macao|MP=Îles Mariannes du Nor"
+        "d|MQ=Martinique|MR=Mauritanie|MS=Montserrat|MT=Malte|MU=Maurice|MV=Maldives|MW=Malawi|MX=M"
+        "exique|MY=Malaisie|MZ=Mozambique|NA=Namibie|NC=Nouvelle-Calédonie|NE=Niger|NF=Île Norfolk|"
+        "NG=Nigeria|NI=Nicaragua|NL=Pays-Bas|NO=Norvège|NP=Népal|NR=Nauru|NU=Niue|NZ=Nouvelle-Zélan"
+        "de|OM=Oman|PA=Panama|PE=Pérou|PF=Polynésie française|PG=Papouasie-Nouvelle-Guinée|PH=Phili"
+        "ppines|PK=Pakistan|PL=Pologne|PM=Saint-Pierre-et-Miquelon|PN=Îles Pitcairn|PR=Porto Rico|P"
+        "S=Territoires palestiniens|PT=Portugal|PW=Palaos|PY=Paraguay|QA=Qatar|RE=La Réunion|RO=Rou"
+        "manie|RS=Serbie|RU=Russie|RW=Rwanda|SA=Arabie saoudite|SB=Îles Salomon|SC=Seychelles|SD=So"
+        "udan|SE=Suède|SG=Singapour|SH=Sainte-Hélène|SI=Slovénie|SJ=Svalbard et Jan Mayen|SK=Slovaq"
+        "uie|SL=Sierra Leone|SM=Saint-Marin|SN=Sénégal|SO=Somalie|SR=Suriname|SS=Soudan du Sud|ST=S"
+        "ao Tomé-et-Principe|SV=Salvador|SX=Saint-Martin (partie néerlandaise)|SY=Syrie|SZ=Eswatini"
+        "|TC=Îles Turques-et-Caïques|TD=Tchad|TF=Terres australes françaises|TG=Togo|TH=Thaïlande|T"
+        "J=Tadjikistan|TK=Tokelau|TL=Timor oriental|TM=Turkménistan|TN=Tunisie|TO=Tonga|TR=Turquie|"
+        "TT=Trinité-et-Tobago|TV=Tuvalu|TW=Taïwan|TZ=Tanzanie|UA=Ukraine|UG=Ouganda|UM=Îles mineure"
+        "s éloignées des États-Unis|US=États-Unis|UY=Uruguay|UZ=Ouzbékistan|VA=État de la Cité du V"
+        "atican|VC=Saint-Vincent-et-les Grenadines|VE=Venezuela|VG=Îles Vierges britanniques|VI=Île"
+        "s Vierges des États-Unis|VN=Viêt Nam|VU=Vanuatu|WF=Wallis-et-Futuna|WS=Samoa|YE=Yémen|YT=M"
+        "ayotte|ZA=Afrique du Sud|ZM=Zambie|ZW=Zimbabwe"
+    ),
+    "en": (
+        "AD=Andorra|AE=United Arab Emirates|AF=Afghanistan|AG=Antigua & Barbuda|AI=Anguilla|AL=Alba"
+        "nia|AM=Armenia|AO=Angola|AQ=Antarctica|AR=Argentina|AS=American Samoa|AT=Austria|AU=Austra"
+        "lia|AW=Aruba|AX=Åland Islands|AZ=Azerbaijan|BA=Bosnia & Herzegovina|BB=Barbados|BD=Banglad"
+        "esh|BE=Belgium|BF=Burkina Faso|BG=Bulgaria|BH=Bahrain|BI=Burundi|BJ=Benin|BL=St. Barthélem"
+        "y|BM=Bermuda|BN=Brunei|BO=Bolivia|BQ=Caribbean Netherlands|BR=Brazil|BS=Bahamas|BT=Bhutan|"
+        "BV=Bouvet Island|BW=Botswana|BY=Belarus|BZ=Belize|CA=Canada|CC=Cocos (Keeling) Islands|CD="
+        "Congo - Kinshasa|CF=Central African Republic|CG=Congo - Brazzaville|CH=Switzerland|CI=Côte"
+        " d’Ivoire|CK=Cook Islands|CL=Chile|CM=Cameroon|CN=China|CO=Colombia|CR=Costa Rica|CU=Cuba|"
+        "CV=Cape Verde|CW=Curaçao|CX=Christmas Island|CY=Cyprus|CZ=Czechia|DE=Germany|DJ=Djibouti|D"
+        "K=Denmark|DM=Dominica|DO=Dominican Republic|DZ=Algeria|EC=Ecuador|EE=Estonia|EG=Egypt|EH=W"
+        "estern Sahara|ER=Eritrea|ES=Spain|ET=Ethiopia|FI=Finland|FJ=Fiji|FK=Falkland Islands|FM=Mi"
+        "cronesia|FO=Faroe Islands|FR=France|GA=Gabon|GB=United Kingdom|GD=Grenada|GE=Georgia|GF=Fr"
+        "ench Guiana|GG=Guernsey|GH=Ghana|GI=Gibraltar|GL=Greenland|GM=Gambia|GN=Guinea|GP=Guadelou"
+        "pe|GQ=Equatorial Guinea|GR=Greece|GS=South Georgia & South Sandwich Islands|GT=Guatemala|G"
+        "U=Guam|GW=Guinea-Bissau|GY=Guyana|HK=Hong Kong SAR China|HM=Heard & McDonald Islands|HN=Ho"
+        "nduras|HR=Croatia|HT=Haiti|HU=Hungary|ID=Indonesia|IE=Ireland|IL=Israel|IM=Isle of Man|IN="
+        "India|IO=British Indian Ocean Territory|IQ=Iraq|IR=Iran|IS=Iceland|IT=Italy|JE=Jersey|JM=J"
+        "amaica|JO=Jordan|JP=Japan|KE=Kenya|KG=Kyrgyzstan|KH=Cambodia|KI=Kiribati|KM=Comoros|KN=St."
+        " Kitts & Nevis|KP=North Korea|KR=South Korea|KW=Kuwait|KY=Cayman Islands|KZ=Kazakhstan|LA="
+        "Laos|LB=Lebanon|LC=St. Lucia|LI=Liechtenstein|LK=Sri Lanka|LR=Liberia|LS=Lesotho|LT=Lithua"
+        "nia|LU=Luxembourg|LV=Latvia|LY=Libya|MA=Morocco|MC=Monaco|MD=Moldova|ME=Montenegro|MF=St. "
+        "Martin|MG=Madagascar|MH=Marshall Islands|MK=North Macedonia|ML=Mali|MM=Myanmar (Burma)|MN="
+        "Mongolia|MO=Macao SAR China|MP=Northern Mariana Islands|MQ=Martinique|MR=Mauritania|MS=Mon"
+        "tserrat|MT=Malta|MU=Mauritius|MV=Maldives|MW=Malawi|MX=Mexico|MY=Malaysia|MZ=Mozambique|NA"
+        "=Namibia|NC=New Caledonia|NE=Niger|NF=Norfolk Island|NG=Nigeria|NI=Nicaragua|NL=Netherland"
+        "s|NO=Norway|NP=Nepal|NR=Nauru|NU=Niue|NZ=New Zealand|OM=Oman|PA=Panama|PE=Peru|PF=French P"
+        "olynesia|PG=Papua New Guinea|PH=Philippines|PK=Pakistan|PL=Poland|PM=St. Pierre & Miquelon"
+        "|PN=Pitcairn Islands|PR=Puerto Rico|PS=Palestinian Territories|PT=Portugal|PW=Palau|PY=Par"
+        "aguay|QA=Qatar|RE=Réunion|RO=Romania|RS=Serbia|RU=Russia|RW=Rwanda|SA=Saudi Arabia|SB=Solo"
+        "mon Islands|SC=Seychelles|SD=Sudan|SE=Sweden|SG=Singapore|SH=St. Helena|SI=Slovenia|SJ=Sva"
+        "lbard & Jan Mayen|SK=Slovakia|SL=Sierra Leone|SM=San Marino|SN=Senegal|SO=Somalia|SR=Surin"
+        "ame|SS=South Sudan|ST=São Tomé & Príncipe|SV=El Salvador|SX=Sint Maarten|SY=Syria|SZ=Eswat"
+        "ini|TC=Turks & Caicos Islands|TD=Chad|TF=French Southern Territories|TG=Togo|TH=Thailand|T"
+        "J=Tajikistan|TK=Tokelau|TL=Timor-Leste|TM=Turkmenistan|TN=Tunisia|TO=Tonga|TR=Türkiye|TT=T"
+        "rinidad & Tobago|TV=Tuvalu|TW=Taiwan|TZ=Tanzania|UA=Ukraine|UG=Uganda|UM=U.S. Outlying Isl"
+        "ands|US=United States|UY=Uruguay|UZ=Uzbekistan|VA=Vatican City|VC=St. Vincent & Grenadines"
+        "|VE=Venezuela|VG=British Virgin Islands|VI=U.S. Virgin Islands|VN=Vietnam|VU=Vanuatu|WF=Wa"
+        "llis & Futuna|WS=Samoa|YE=Yemen|YT=Mayotte|ZA=South Africa|ZM=Zambia|ZW=Zimbabwe"
+    ),
+    "es": (
+        "AD=Andorra|AE=Emiratos Árabes Unidos|AF=Afganistán|AG=Antigua y Barbuda|AI=Anguila|AL=Alba"
+        "nia|AM=Armenia|AO=Angola|AQ=Antártida|AR=Argentina|AS=Samoa Americana|AT=Austria|AU=Austra"
+        "lia|AW=Aruba|AX=Islas Aland|AZ=Azerbaiyán|BA=Bosnia y Herzegovina|BB=Barbados|BD=Bangladés"
+        "|BE=Bélgica|BF=Burkina Faso|BG=Bulgaria|BH=Baréin|BI=Burundi|BJ=Benín|BL=San Bartolomé|BM="
+        "Bermudas|BN=Brunéi|BO=Bolivia|BQ=Caribe neerlandés|BR=Brasil|BS=Bahamas|BT=Bután|BV=Isla B"
+        "ouvet|BW=Botsuana|BY=Bielorrusia|BZ=Belice|CA=Canadá|CC=Islas Cocos|CD=República Democráti"
+        "ca del Congo|CF=República Centroafricana|CG=Congo|CH=Suiza|CI=Côte d’Ivoire|CK=Islas Cook|"
+        "CL=Chile|CM=Camerún|CN=China|CO=Colombia|CR=Costa Rica|CU=Cuba|CV=Cabo Verde|CW=Curazao|CX"
+        "=Isla de Navidad|CY=Chipre|CZ=Chequia|DE=Alemania|DJ=Yibuti|DK=Dinamarca|DM=Dominica|DO=Re"
+        "pública Dominicana|DZ=Argelia|EC=Ecuador|EE=Estonia|EG=Egipto|EH=Sáhara Occidental|ER=Erit"
+        "rea|ES=España|ET=Etiopía|FI=Finlandia|FJ=Fiyi|FK=Islas Malvinas|FM=Micronesia|FO=Islas Fer"
+        "oe|FR=Francia|GA=Gabón|GB=Reino Unido|GD=Granada|GE=Georgia|GF=Guayana Francesa|GG=Guernes"
+        "ey|GH=Ghana|GI=Gibraltar|GL=Groenlandia|GM=Gambia|GN=Guinea|GP=Guadalupe|GQ=Guinea Ecuator"
+        "ial|GR=Grecia|GS=Islas Georgia del Sur y Sandwich del Sur|GT=Guatemala|GU=Guam|GW=Guinea-B"
+        "isáu|GY=Guyana|HK=RAE de Hong Kong (China)|HM=Islas Heard y McDonald|HN=Honduras|HR=Croaci"
+        "a|HT=Haití|HU=Hungría|ID=Indonesia|IE=Irlanda|IL=Israel|IM=Isla de Man|IN=India|IO=Territo"
+        "rio Británico del Océano Índico|IQ=Irak|IR=Irán|IS=Islandia|IT=Italia|JE=Jersey|JM=Jamaica"
+        "|JO=Jordania|JP=Japón|KE=Kenia|KG=Kirguistán|KH=Camboya|KI=Kiribati|KM=Comoras|KN=San Cris"
+        "tóbal y Nieves|KP=Corea del Norte|KR=Corea del Sur|KW=Kuwait|KY=Islas Caimán|KZ=Kazajistán"
+        "|LA=Laos|LB=Líbano|LC=Santa Lucía|LI=Liechtenstein|LK=Sri Lanka|LR=Liberia|LS=Lesoto|LT=Li"
+        "tuania|LU=Luxemburgo|LV=Letonia|LY=Libia|MA=Marruecos|MC=Mónaco|MD=Moldavia|ME=Montenegro|"
+        "MF=San Martín|MG=Madagascar|MH=Islas Marshall|MK=Macedonia del Norte|ML=Mali|MM=Myanmar (B"
+        "irmania)|MN=Mongolia|MO=RAE de Macao (China)|MP=Islas Marianas del Norte|MQ=Martinica|MR=M"
+        "auritania|MS=Montserrat|MT=Malta|MU=Mauricio|MV=Maldivas|MW=Malaui|MX=México|MY=Malasia|MZ"
+        "=Mozambique|NA=Namibia|NC=Nueva Caledonia|NE=Níger|NF=Isla Norfolk|NG=Nigeria|NI=Nicaragua"
+        "|NL=Países Bajos|NO=Noruega|NP=Nepal|NR=Nauru|NU=Niue|NZ=Nueva Zelanda|OM=Omán|PA=Panamá|P"
+        "E=Perú|PF=Polinesia Francesa|PG=Papúa Nueva Guinea|PH=Filipinas|PK=Pakistán|PL=Polonia|PM="
+        "San Pedro y Miquelón|PN=Islas Pitcairn|PR=Puerto Rico|PS=Territorios Palestinos|PT=Portuga"
+        "l|PW=Palaos|PY=Paraguay|QA=Catar|RE=Reunión|RO=Rumanía|RS=Serbia|RU=Rusia|RW=Ruanda|SA=Ara"
+        "bia Saudí|SB=Islas Salomón|SC=Seychelles|SD=Sudán|SE=Suecia|SG=Singapur|SH=Santa Elena|SI="
+        "Eslovenia|SJ=Svalbard y Jan Mayen|SK=Eslovaquia|SL=Sierra Leona|SM=San Marino|SN=Senegal|S"
+        "O=Somalia|SR=Surinam|SS=Sudán del Sur|ST=Santo Tomé y Príncipe|SV=El Salvador|SX=Sint Maar"
+        "ten|SY=Siria|SZ=Esuatini|TC=Islas Turcas y Caicos|TD=Chad|TF=Territorios Australes Frances"
+        "es|TG=Togo|TH=Tailandia|TJ=Tayikistán|TK=Tokelau|TL=Timor-Leste|TM=Turkmenistán|TN=Túnez|T"
+        "O=Tonga|TR=Turquía|TT=Trinidad y Tobago|TV=Tuvalu|TW=Taiwán|TZ=Tanzania|UA=Ucrania|UG=Ugan"
+        "da|UM=Islas menores alejadas de EE. UU.|US=Estados Unidos|UY=Uruguay|UZ=Uzbekistán|VA=Ciud"
+        "ad del Vaticano|VC=San Vicente y las Granadinas|VE=Venezuela|VG=Islas Vírgenes Británicas|"
+        "VI=Islas Vírgenes de EE. UU.|VN=Vietnam|VU=Vanuatu|WF=Wallis y Futuna|WS=Samoa|YE=Yemen|YT"
+        "=Mayotte|ZA=Sudáfrica|ZM=Zambia|ZW=Zimbabue"
+    ),
+    "de": (
+        "AD=Andorra|AE=Vereinigte Arabische Emirate|AF=Afghanistan|AG=Antigua und Barbuda|AI=Anguil"
+        "la|AL=Albanien|AM=Armenien|AO=Angola|AQ=Antarktis|AR=Argentinien|AS=Amerikanisch-Samoa|AT="
+        "Österreich|AU=Australien|AW=Aruba|AX=Ålandinseln|AZ=Aserbaidschan|BA=Bosnien und Herzegowi"
+        "na|BB=Barbados|BD=Bangladesch|BE=Belgien|BF=Burkina Faso|BG=Bulgarien|BH=Bahrain|BI=Burund"
+        "i|BJ=Benin|BL=St. Barthélemy|BM=Bermuda|BN=Brunei Darussalam|BO=Bolivien|BQ=Karibische Nie"
+        "derlande|BR=Brasilien|BS=Bahamas|BT=Bhutan|BV=Bouvetinsel|BW=Botsuana|BY=Belarus|BZ=Belize"
+        "|CA=Kanada|CC=Kokosinseln|CD=Kongo-Kinshasa|CF=Zentralafrikanische Republik|CG=Kongo-Brazz"
+        "aville|CH=Schweiz|CI=Côte d’Ivoire|CK=Cookinseln|CL=Chile|CM=Kamerun|CN=China|CO=Kolumbien"
+        "|CR=Costa Rica|CU=Kuba|CV=Cabo Verde|CW=Curaçao|CX=Weihnachtsinsel|CY=Zypern|CZ=Tschechien"
+        "|DE=Deutschland|DJ=Dschibuti|DK=Dänemark|DM=Dominica|DO=Dominikanische Republik|DZ=Algerie"
+        "n|EC=Ecuador|EE=Estland|EG=Ägypten|EH=Westsahara|ER=Eritrea|ES=Spanien|ET=Äthiopien|FI=Fin"
+        "nland|FJ=Fidschi|FK=Falklandinseln|FM=Mikronesien|FO=Färöer|FR=Frankreich|GA=Gabun|GB=Vere"
+        "inigtes Königreich|GD=Grenada|GE=Georgien|GF=Französisch-Guayana|GG=Guernsey|GH=Ghana|GI=G"
+        "ibraltar|GL=Grönland|GM=Gambia|GN=Guinea|GP=Guadeloupe|GQ=Äquatorialguinea|GR=Griechenland"
+        "|GS=Südgeorgien und die Südlichen Sandwichinseln|GT=Guatemala|GU=Guam|GW=Guinea-Bissau|GY="
+        "Guyana|HK=Sonderverwaltungsregion Hongkong|HM=Heard und McDonaldinseln|HN=Honduras|HR=Kroa"
+        "tien|HT=Haiti|HU=Ungarn|ID=Indonesien|IE=Irland|IL=Israel|IM=Isle of Man|IN=Indien|IO=Brit"
+        "isches Territorium im Indischen Ozean|IQ=Irak|IR=Iran|IS=Island|IT=Italien|JE=Jersey|JM=Ja"
+        "maika|JO=Jordanien|JP=Japan|KE=Kenia|KG=Kirgisistan|KH=Kambodscha|KI=Kiribati|KM=Komoren|K"
+        "N=St. Kitts und Nevis|KP=Nordkorea|KR=Südkorea|KW=Kuwait|KY=Kaimaninseln|KZ=Kasachstan|LA="
+        "Laos|LB=Libanon|LC=St. Lucia|LI=Liechtenstein|LK=Sri Lanka|LR=Liberia|LS=Lesotho|LT=Litaue"
+        "n|LU=Luxemburg|LV=Lettland|LY=Libyen|MA=Marokko|MC=Monaco|MD=Republik Moldau|ME=Montenegro"
+        "|MF=St. Martin|MG=Madagaskar|MH=Marshallinseln|MK=Nordmazedonien|ML=Mali|MM=Myanmar|MN=Mon"
+        "golei|MO=Sonderverwaltungsregion Macau|MP=Nördliche Marianen|MQ=Martinique|MR=Mauretanien|"
+        "MS=Montserrat|MT=Malta|MU=Mauritius|MV=Malediven|MW=Malawi|MX=Mexiko|MY=Malaysia|MZ=Mosamb"
+        "ik|NA=Namibia|NC=Neukaledonien|NE=Niger|NF=Norfolkinsel|NG=Nigeria|NI=Nicaragua|NL=Niederl"
+        "ande|NO=Norwegen|NP=Nepal|NR=Nauru|NU=Niue|NZ=Neuseeland|OM=Oman|PA=Panama|PE=Peru|PF=Fran"
+        "zösisch-Polynesien|PG=Papua-Neuguinea|PH=Philippinen|PK=Pakistan|PL=Polen|PM=St. Pierre un"
+        "d Miquelon|PN=Pitcairninseln|PR=Puerto Rico|PS=Palästinensische Autonomiegebiete|PT=Portug"
+        "al|PW=Palau|PY=Paraguay|QA=Katar|RE=Réunion|RO=Rumänien|RS=Serbien|RU=Russland|RW=Ruanda|S"
+        "A=Saudi-Arabien|SB=Salomonen|SC=Seychellen|SD=Sudan|SE=Schweden|SG=Singapur|SH=St. Helena|"
+        "SI=Slowenien|SJ=Spitzbergen und Jan Mayen|SK=Slowakei|SL=Sierra Leone|SM=San Marino|SN=Sen"
+        "egal|SO=Somalia|SR=Suriname|SS=Südsudan|ST=São Tomé und Príncipe|SV=El Salvador|SX=Sint Ma"
+        "arten|SY=Syrien|SZ=Eswatini|TC=Turks- und Caicosinseln|TD=Tschad|TF=Französische Süd- und "
+        "Antarktisgebiete|TG=Togo|TH=Thailand|TJ=Tadschikistan|TK=Tokelau|TL=Timor-Leste|TM=Turkmen"
+        "istan|TN=Tunesien|TO=Tonga|TR=Türkei|TT=Trinidad und Tobago|TV=Tuvalu|TW=Taiwan|TZ=Tansani"
+        "a|UA=Ukraine|UG=Uganda|UM=Amerikanische Überseeinseln|US=Vereinigte Staaten|UY=Uruguay|UZ="
+        "Usbekistan|VA=Vatikanstadt|VC=St. Vincent und die Grenadinen|VE=Venezuela|VG=Britische Jun"
+        "gferninseln|VI=Amerikanische Jungferninseln|VN=Vietnam|VU=Vanuatu|WF=Wallis und Futuna|WS="
+        "Samoa|YE=Jemen|YT=Mayotte|ZA=Südafrika|ZM=Sambia|ZW=Simbabwe"
+    ),
+    "it": (
+        "AD=Andorra|AE=Emirati Arabi Uniti|AF=Afghanistan|AG=Antigua e Barbuda|AI=Anguilla|AL=Alban"
+        "ia|AM=Armenia|AO=Angola|AQ=Antartide|AR=Argentina|AS=Samoa Americane|AT=Austria|AU=Austral"
+        "ia|AW=Aruba|AX=Isole Åland|AZ=Azerbaigian|BA=Bosnia ed Erzegovina|BB=Barbados|BD=Banglades"
+        "h|BE=Belgio|BF=Burkina Faso|BG=Bulgaria|BH=Bahrein|BI=Burundi|BJ=Benin|BL=Saint-Barthélemy"
+        "|BM=Bermuda|BN=Brunei|BO=Bolivia|BQ=Caraibi Olandesi|BR=Brasile|BS=Bahamas|BT=Bhutan|BV=Is"
+        "ola Bouvet|BW=Botswana|BY=Bielorussia|BZ=Belize|CA=Canada|CC=Isole Cocos (Keeling)|CD=Cong"
+        "o - Kinshasa|CF=Repubblica Centrafricana|CG=Congo-Brazzaville|CH=Svizzera|CI=Costa d’Avori"
+        "o|CK=Isole Cook|CL=Cile|CM=Camerun|CN=Cina|CO=Colombia|CR=Costa Rica|CU=Cuba|CV=Capo Verde"
+        "|CW=Curaçao|CX=Isola Christmas|CY=Cipro|CZ=Cechia|DE=Germania|DJ=Gibuti|DK=Danimarca|DM=Do"
+        "minica|DO=Repubblica Dominicana|DZ=Algeria|EC=Ecuador|EE=Estonia|EG=Egitto|EH=Sahara Occid"
+        "entale|ER=Eritrea|ES=Spagna|ET=Etiopia|FI=Finlandia|FJ=Figi|FK=Isole Falkland|FM=Micronesi"
+        "a|FO=Isole Fær Øer|FR=Francia|GA=Gabon|GB=Regno Unito|GD=Grenada|GE=Georgia|GF=Guyana Fran"
+        "cese|GG=Guernsey|GH=Ghana|GI=Gibilterra|GL=Groenlandia|GM=Gambia|GN=Guinea|GP=Guadalupa|GQ"
+        "=Guinea Equatoriale|GR=Grecia|GS=Georgia del Sud e Sandwich Australi|GT=Guatemala|GU=Guam|"
+        "GW=Guinea-Bissau|GY=Guyana|HK=RAS di Hong Kong|HM=Isole Heard e McDonald|HN=Honduras|HR=Cr"
+        "oazia|HT=Haiti|HU=Ungheria|ID=Indonesia|IE=Irlanda|IL=Israele|IM=Isola di Man|IN=India|IO="
+        "Territorio Britannico dell’Oceano Indiano|IQ=Iraq|IR=Iran|IS=Islanda|IT=Italia|JE=Jersey|J"
+        "M=Giamaica|JO=Giordania|JP=Giappone|KE=Kenya|KG=Kirghizistan|KH=Cambogia|KI=Kiribati|KM=Co"
+        "more|KN=Saint Kitts e Nevis|KP=Corea del Nord|KR=Corea del Sud|KW=Kuwait|KY=Isole Cayman|K"
+        "Z=Kazakistan|LA=Laos|LB=Libano|LC=Saint Lucia|LI=Liechtenstein|LK=Sri Lanka|LR=Liberia|LS="
+        "Lesotho|LT=Lituania|LU=Lussemburgo|LV=Lettonia|LY=Libia|MA=Marocco|MC=Monaco|MD=Moldavia|M"
+        "E=Montenegro|MF=Saint Martin|MG=Madagascar|MH=Isole Marshall|MK=Macedonia del Nord|ML=Mali"
+        "|MM=Myanmar (Birmania)|MN=Mongolia|MO=RAS di Macao|MP=Isole Marianne Settentrionali|MQ=Mar"
+        "tinica|MR=Mauritania|MS=Montserrat|MT=Malta|MU=Mauritius|MV=Maldive|MW=Malawi|MX=Messico|M"
+        "Y=Malaysia|MZ=Mozambico|NA=Namibia|NC=Nuova Caledonia|NE=Niger|NF=Isola Norfolk|NG=Nigeria"
+        "|NI=Nicaragua|NL=Paesi Bassi|NO=Norvegia|NP=Nepal|NR=Nauru|NU=Niue|NZ=Nuova Zelanda|OM=Oma"
+        "n|PA=Panama|PE=Perù|PF=Polinesia Francese|PG=Papua Nuova Guinea|PH=Filippine|PK=Pakistan|P"
+        "L=Polonia|PM=Saint-Pierre e Miquelon|PN=Isole Pitcairn|PR=Portorico|PS=Territori Palestine"
+        "si|PT=Portogallo|PW=Palau|PY=Paraguay|QA=Qatar|RE=Riunione|RO=Romania|RS=Serbia|RU=Russia|"
+        "RW=Ruanda|SA=Arabia Saudita|SB=Isole Salomone|SC=Seychelles|SD=Sudan|SE=Svezia|SG=Singapor"
+        "e|SH=Sant’Elena|SI=Slovenia|SJ=Svalbard e Jan Mayen|SK=Slovacchia|SL=Sierra Leone|SM=San M"
+        "arino|SN=Senegal|SO=Somalia|SR=Suriname|SS=Sud Sudan|ST=São Tomé e Príncipe|SV=El Salvador"
+        "|SX=Sint Maarten|SY=Siria|SZ=Eswatini|TC=Isole Turks e Caicos|TD=Ciad|TF=Terre Australi Fr"
+        "ancesi|TG=Togo|TH=Thailandia|TJ=Tagikistan|TK=Tokelau|TL=Timor Est|TM=Turkmenistan|TN=Tuni"
+        "sia|TO=Tonga|TR=Turchia|TT=Trinidad e Tobago|TV=Tuvalu|TW=Taiwan|TZ=Tanzania|UA=Ucraina|UG"
+        "=Uganda|UM=Isole Minori Esterne degli Stati Uniti|US=Stati Uniti|UY=Uruguay|UZ=Uzbekistan|"
+        "VA=Città del Vaticano|VC=Saint Vincent e Grenadine|VE=Venezuela|VG=Isole Vergini Britannic"
+        "he|VI=Isole Vergini Americane|VN=Vietnam|VU=Vanuatu|WF=Wallis e Futuna|WS=Samoa|YE=Yemen|Y"
+        "T=Mayotte|ZA=Sudafrica|ZM=Zambia|ZW=Zimbabwe"
+    ),
+    "pt": (
+        "AD=Andorra|AE=Emirados Árabes Unidos|AF=Afeganistão|AG=Antígua e Barbuda|AI=Anguila|AL=Alb"
+        "ânia|AM=Armênia|AO=Angola|AQ=Antártida|AR=Argentina|AS=Samoa Americana|AT=Áustria|AU=Austr"
+        "ália|AW=Aruba|AX=Ilhas Aland|AZ=Azerbaijão|BA=Bósnia e Herzegovina|BB=Barbados|BD=Banglade"
+        "sh|BE=Bélgica|BF=Burquina Faso|BG=Bulgária|BH=Barein|BI=Burundi|BJ=Benin|BL=São Bartolomeu"
+        "|BM=Bermudas|BN=Brunei|BO=Bolívia|BQ=Países Baixos Caribenhos|BR=Brasil|BS=Bahamas|BT=Butã"
+        "o|BV=Ilha Bouvet|BW=Botsuana|BY=Bielorrússia|BZ=Belize|CA=Canadá|CC=Ilhas Cocos (Keeling)|"
+        "CD=Congo - Kinshasa|CF=República Centro-Africana|CG=República do Congo|CH=Suíça|CI=Costa d"
+        "o Marfim|CK=Ilhas Cook|CL=Chile|CM=Camarões|CN=China|CO=Colômbia|CR=Costa Rica|CU=Cuba|CV="
+        "Cabo Verde|CW=Curaçao|CX=Ilha Christmas|CY=Chipre|CZ=Tchéquia|DE=Alemanha|DJ=Djibuti|DK=Di"
+        "namarca|DM=Dominica|DO=República Dominicana|DZ=Argélia|EC=Equador|EE=Estônia|EG=Egito|EH=S"
+        "aara Ocidental|ER=Eritreia|ES=Espanha|ET=Etiópia|FI=Finlândia|FJ=Fiji|FK=Ilhas Malvinas|FM"
+        "=Micronésia|FO=Ilhas Faroé|FR=França|GA=Gabão|GB=Reino Unido|GD=Granada|GE=Geórgia|GF=Guia"
+        "na Francesa|GG=Guernsey|GH=Gana|GI=Gibraltar|GL=Groenlândia|GM=Gâmbia|GN=Guiné|GP=Guadalup"
+        "e|GQ=Guiné Equatorial|GR=Grécia|GS=Ilhas Geórgia do Sul e Sandwich do Sul|GT=Guatemala|GU="
+        "Guam|GW=Guiné-Bissau|GY=Guiana|HK=Hong Kong, RAE da China|HM=Ilhas Heard e McDonald|HN=Hon"
+        "duras|HR=Croácia|HT=Haiti|HU=Hungria|ID=Indonésia|IE=Irlanda|IL=Israel|IM=Ilha de Man|IN=Í"
+        "ndia|IO=Território Britânico do Oceano Índico|IQ=Iraque|IR=Irã|IS=Islândia|IT=Itália|JE=Je"
+        "rsey|JM=Jamaica|JO=Jordânia|JP=Japão|KE=Quênia|KG=Quirguistão|KH=Camboja|KI=Quiribati|KM=C"
+        "omores|KN=São Cristóvão e Névis|KP=Coreia do Norte|KR=Coreia do Sul|KW=Kuwait|KY=Ilhas Cay"
+        "man|KZ=Cazaquistão|LA=Laos|LB=Líbano|LC=Santa Lúcia|LI=Liechtenstein|LK=Sri Lanka|LR=Libér"
+        "ia|LS=Lesoto|LT=Lituânia|LU=Luxemburgo|LV=Letônia|LY=Líbia|MA=Marrocos|MC=Mônaco|MD=Moldáv"
+        "ia|ME=Montenegro|MF=São Martinho|MG=Madagascar|MH=Ilhas Marshall|MK=Macedônia do Norte|ML="
+        "Mali|MM=Mianmar (Birmânia)|MN=Mongólia|MO=Macau, RAE da China|MP=Ilhas Marianas do Norte|M"
+        "Q=Martinica|MR=Mauritânia|MS=Montserrat|MT=Malta|MU=Maurício|MV=Maldivas|MW=Malaui|MX=Méxi"
+        "co|MY=Malásia|MZ=Moçambique|NA=Namíbia|NC=Nova Caledônia|NE=Níger|NF=Ilha Norfolk|NG=Nigér"
+        "ia|NI=Nicarágua|NL=Países Baixos|NO=Noruega|NP=Nepal|NR=Nauru|NU=Niue|NZ=Nova Zelândia|OM="
+        "Omã|PA=Panamá|PE=Peru|PF=Polinésia Francesa|PG=Papua-Nova Guiné|PH=Filipinas|PK=Paquistão|"
+        "PL=Polônia|PM=São Pedro e Miquelão|PN=Ilhas Pitcairn|PR=Porto Rico|PS=Territórios palestin"
+        "os|PT=Portugal|PW=Palau|PY=Paraguai|QA=Catar|RE=Reunião|RO=Romênia|RS=Sérvia|RU=Rússia|RW="
+        "Ruanda|SA=Arábia Saudita|SB=Ilhas Salomão|SC=Seicheles|SD=Sudão|SE=Suécia|SG=Singapura|SH="
+        "Santa Helena|SI=Eslovênia|SJ=Svalbard e Jan Mayen|SK=Eslováquia|SL=Serra Leoa|SM=San Marin"
+        "o|SN=Senegal|SO=Somália|SR=Suriname|SS=Sudão do Sul|ST=São Tomé e Príncipe|SV=El Salvador|"
+        "SX=Sint Maarten|SY=Síria|SZ=Essuatíni|TC=Ilhas Turcas e Caicos|TD=Chade|TF=Territórios Fra"
+        "nceses do Sul|TG=Togo|TH=Tailândia|TJ=Tadjiquistão|TK=Tokelau|TL=Timor-Leste|TM=Turcomenis"
+        "tão|TN=Tunísia|TO=Tonga|TR=Turquia|TT=Trinidad e Tobago|TV=Tuvalu|TW=Taiwan|TZ=Tanzânia|UA"
+        "=Ucrânia|UG=Uganda|UM=Ilhas Menores Distantes dos EUA|US=Estados Unidos|UY=Uruguai|UZ=Uzbe"
+        "quistão|VA=Cidade do Vaticano|VC=São Vicente e Granadinas|VE=Venezuela|VG=Ilhas Virgens Br"
+        "itânicas|VI=Ilhas Virgens Americanas|VN=Vietnã|VU=Vanuatu|WF=Wallis e Futuna|WS=Samoa|YE=I"
+        "êmen|YT=Mayotte|ZA=África do Sul|ZM=Zâmbia|ZW=Zimbábue"
+    ),
+}
+
+# Jours et mois abrégés (CLDR)
+DATES = {
+    'fr': (['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'],
+           ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']),
+    'en': (['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+           ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']),
+    'es': (['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'],
+           ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']),
+    'de': (['Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.', 'So.'],
+           ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sept.', 'Okt.', 'Nov.', 'Dez.']),
+    'it': (['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'],
+           ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']),
+    'pt': (['seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.', 'dom.'],
+           ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.']),
+}
+
+
+# ---------------------------------------------------------------- langues
+LANGUES = ["fr", "en", "es", "de", "it", "pt"]
+NOMS_LANGUES = {"fr": "Français", "en": "English", "es": "Español",
+                "de": "Deutsch", "it": "Italiano", "pt": "Português"}
+
+# clé : (fr, en, es, de, it, pt)
+TEXTES = {
+    "app": ("Horloge mondiale", "World Clock", "Reloj mundial", "Weltuhr",
+            "Orologio mondiale", "Relógio mundial"),
+    "utc_sous": ("temps universel", "universal time", "tiempo universal", "Weltzeit",
+                 "tempo universale", "tempo universal"),
+    "local": ("LOCAL", "LOCAL", "LOCAL", "LOKAL", "LOCALE", "LOCAL"),
+    "local_sous": ("heure du PC", "PC time", "hora del PC", "PC-Zeit", "ora del PC", "hora do PC"),
+    "secondes": ("Secondes", "Seconds", "Segundos", "Sekunden", "Secondi", "Segundos"),
+    "premier_plan": ("Toujours au premier plan", "Always on top", "Siempre visible",
+                     "Immer im Vordergrund", "Sempre in primo piano", "Sempre visível"),
+    "reglages": ("Réglages", "Settings", "Ajustes", "Einstellungen", "Impostazioni",
+                 "Configurações"),
+    "vue_pays": ("Pays", "Countries", "Países", "Länder", "Paesi", "Países"),
+    "vue_carte": ("Carte", "Map", "Mapa", "Karte", "Mappa", "Mapa"),
+    "vue_compact": ("Compact", "Compact", "Compacto", "Kompakt", "Compatto", "Compacto"),
+    "jour": ("jour", "day", "día", "Tag", "giorno", "dia"),
+    "grayline": ("grayline", "greyline", "línea gris", "Greyline", "greyline", "greyline"),
+    "crépuscule": ("crépuscule", "twilight", "crepúsculo", "Dämmerung", "crepuscolo",
+                   "crepúsculo"),
+    "nuit": ("nuit", "night", "noche", "Nacht", "notte", "noite"),
+    "aide_suppr": ("clic droit sur un pays pour le supprimer", "right-click a country to remove it",
+                   "clic derecho en un país para quitarlo", "Rechtsklick auf ein Land zum Entfernen",
+                   "clic destro su un paese per rimuoverlo", "clique direito num país para removê-lo"),
+    "ajouter": ("Ajouter", "Add", "Añadir", "Hinzufügen", "Aggiungi", "Adicionar"),
+    "defaut": ("Défaut", "Default", "Predeterminado", "Standard", "Predefinito", "Padrão"),
+    "supprimer": ("Supprimer {nom}", "Remove {nom}", "Quitar {nom}", "{nom} entfernen",
+                  "Rimuovi {nom}", "Remover {nom}"),
+    "reinit_titre": ("Réinitialiser", "Reset", "Restablecer", "Zurücksetzen", "Ripristina",
+                     "Redefinir"),
+    "reinit_q": ("Revenir à la liste de pays par défaut ?", "Restore the default country list?",
+                 "¿Volver a la lista de países predeterminada?", "Standard-Länderliste wiederherstellen?",
+                 "Ripristinare l'elenco dei paesi predefinito?", "Restaurar a lista de países padrão?"),
+    "ajout_titre": ("Ajouter un pays", "Add a country", "Añadir un país", "Land hinzufügen",
+                    "Aggiungi un paese", "Adicionar um país"),
+    "ajout_rech": ("Recherche (pays ou ville, ex. Canada, Italie, Tokyo)",
+                   "Search (country or city, e.g. Canada, Italy, Tokyo)",
+                   "Buscar (país o ciudad, p. ej. Canadá, Italia, Tokyo)",
+                   "Suche (Land oder Stadt, z. B. Kanada, Italien, Tokyo)",
+                   "Cerca (paese o città, es. Canada, Italia, Tokyo)",
+                   "Pesquisar (país ou cidade, ex. Canadá, Itália, Tokyo)"),
+    "ajout_nom": ("Nom affiché", "Display name", "Nombre mostrado", "Angezeigter Name",
+                  "Nome visualizzato", "Nome exibido"),
+    "ajout_choisir": ("Choisis un pays dans la liste.", "Pick a country from the list.",
+                      "Elige un país de la lista.", "Wähle ein Land aus der Liste.",
+                      "Scegli un paese dall'elenco.", "Escolha um país da lista."),
+    "fuseaux": ("Fuseaux horaires", "Time zones", "Husos horarios", "Zeitzonen", "Fusi orari",
+                "Fusos horários"),
+    "fuseaux_aucun": ("Aucun fuseau horaire disponible.\nInstalle-les avec :  py -m pip install tzdata",
+                      "No time zones available.\nInstall them with:  py -m pip install tzdata",
+                      "No hay husos horarios.\nInstálalos con:  py -m pip install tzdata",
+                      "Keine Zeitzonen verfügbar.\nInstallieren mit:  py -m pip install tzdata",
+                      "Nessun fuso orario disponibile.\nInstallali con:  py -m pip install tzdata",
+                      "Nenhum fuso horário disponível.\nInstale com:  py -m pip install tzdata"),
+    "survol_aide": ("Survole la carte : locator, distance et azimut depuis le QTH",
+                    "Hover over the map: locator, distance and bearing from your QTH",
+                    "Pasa el ratón por el mapa: locator, distancia y azimut desde el QTH",
+                    "Maus über die Karte: Locator, Entfernung und Azimut vom QTH",
+                    "Passa sopra la mappa: locator, distanza e azimut dal QTH",
+                    "Passe o mouse sobre o mapa: locator, distância e azimute a partir do QTH"),
+    "cal_stations": ("Ionosondes", "Ionosondes", "Ionosondas", "Ionosonden", "Ionosonde",
+                     "Ionossondas"),
+    "cal_aurore": ("Ovale auroral", "Auroral oval", "Óvalo auroral", "Polarlichtoval",
+                   "Ovale aurorale", "Oval auroral"),
+    "indices": ("INDICES SOLAIRES", "SOLAR INDICES", "ÍNDICES SOLARES", "SONNENINDIZES",
+                "INDICI SOLARI", "ÍNDICES SOLARES"),
+    "i_xray": ("Rayons X", "X-rays", "Rayos X", "Röntgen", "Raggi X", "Raios X"),
+    "i_vent": ("Vent km/s", "Wind km/s", "Viento km/s", "Wind km/s", "Vento km/s", "Vento km/s"),
+    "i_geomag": ("Géomag.", "Geomag.", "Geomag.", "Geomag.", "Geomag.", "Geomag."),
+    "i_bruit": ("Bruit", "Noise", "Ruido", "Rauschen", "Rumore", "Ruído"),
+    "i_aurore": ("Aurore", "Aurora", "Aurora", "Polarlicht", "Aurora", "Aurora"),
+    "bandes_hf": ("BANDES HF", "HF BANDS", "BANDAS HF", "KW-BÄNDER", "BANDE HF", "BANDAS HF"),
+    "Jour": ("Jour", "Day", "Día", "Tag", "Giorno", "Dia"),
+    "Nuit": ("Nuit", "Night", "Noche", "Nacht", "Notte", "Noite"),
+    "Good": ("Bon", "Good", "Buena", "Gut", "Buona", "Boa"),
+    "Fair": ("Moyen", "Fair", "Regular", "Mittel", "Discreta", "Razoável"),
+    "Poor": ("Mauvais", "Poor", "Mala", "Schlecht", "Scarsa", "Fraca"),
+    "VR QUIET": ("très calme", "very quiet", "muy tranquilo", "sehr ruhig", "molto calmo",
+                 "muito calmo"),
+    "QUIET": ("calme", "quiet", "tranquilo", "ruhig", "calmo", "calmo"),
+    "UNSETTLD": ("instable", "unsettled", "inestable", "unruhig", "instabile", "instável"),
+    "ACTIVE": ("actif", "active", "activo", "aktiv", "attivo", "ativo"),
+    "MIN STORM": ("orage mineur", "minor storm", "tormenta menor", "kleiner Sturm",
+                  "tempesta minore", "tempestade menor"),
+    "MAJ STORM": ("orage majeur", "major storm", "tormenta mayor", "großer Sturm",
+                  "tempesta maggiore", "tempestade maior"),
+    "SEV STORM": ("orage sévère", "severe storm", "tormenta severa", "schwerer Sturm",
+                  "tempesta severa", "tempestade severa"),
+    "EXT STORM": ("orage extrême", "extreme storm", "tormenta extrema", "extremer Sturm",
+                  "tempesta estrema", "tempestade extrema"),
+    "vhf_aurore": ("Aurore", "Aurora", "Aurora", "Polarlicht", "Aurora", "Aurora"),
+    "ferme": ("fermé", "closed", "cerrada", "geschlossen", "chiusa", "fechada"),
+    "iono_proche": ("Ionosonde la plus proche : {nom} ({dist})", "Nearest ionosonde: {nom} ({dist})",
+                    "Ionosonda más cercana: {nom} ({dist})", "Nächste Ionosonde: {nom} ({dist})",
+                    "Ionosonda più vicina: {nom} ({dist})", "Ionossonda mais próxima: {nom} ({dist})"),
+    "iono_aucune": ("Ionosonde la plus proche : pas de mesure récente",
+                    "Nearest ionosonde: no recent measurement",
+                    "Ionosonda más cercana: sin medición reciente",
+                    "Nächste Ionosonde: keine aktuelle Messung",
+                    "Ionosonda più vicina: nessuna misura recente",
+                    "Ionossonda mais próxima: sem medição recente"),
+    "il_y_a": ("il y a {n} min", "{n} min ago", "hace {n} min", "vor {n} min", "{n} min fa",
+               "há {n} min"),
+    "src_indices": ("Indices N0NBH : {t}", "N0NBH indices: {t}", "Índices N0NBH: {t}",
+                    "N0NBH-Indizes: {t}", "Indici N0NBH: {t}", "Índices N0NBH: {t}"),
+    "src_indispo": ("indisponible : {l}", "unavailable: {l}", "no disponible: {l}",
+                    "nicht verfügbar: {l}", "non disponibile: {l}", "indisponível: {l}"),
+    "src_maj": ("mise à jour toutes les 15 min", "updated every 15 min",
+                "actualización cada 15 min", "Aktualisierung alle 15 min",
+                "aggiornamento ogni 15 min", "atualização a cada 15 min"),
+    "chargement": ("Chargement des données de propagation…", "Loading propagation data…",
+                   "Cargando datos de propagación…", "Lade Ausbreitungsdaten…",
+                   "Caricamento dati di propagazione…", "Carregando dados de propagação…"),
+    "soleil": ("soleil {h}° {etat}", "sun {h}° {etat}", "sol {h}° {etat}", "Sonne {h}° {etat}",
+               "sole {h}° {etat}", "sol {h}° {etat}"),
+    "soleil_qth": ("soleil à {h}° au QTH", "sun at {h}° at QTH", "sol a {h}° en el QTH",
+                   "Sonne bei {h}° am QTH", "sole a {h}° al QTH", "sol a {h}° no QTH"),
+    "lever_coucher": ("↑ lever {l}     ↓ coucher {c}", "↑ sunrise {l}     ↓ sunset {c}",
+                      "↑ salida {l}     ↓ puesta {c}", "↑ Aufgang {l}     ↓ Untergang {c}",
+                      "↑ alba {l}     ↓ tramonto {c}", "↑ nascer {l}     ↓ pôr {c}"),
+    "locator_manquant": ("Indique ton locator dans ⚙ Réglages", "Enter your locator in ⚙ Settings",
+                         "Indica tu locator en ⚙ Ajustes", "Locator in ⚙ Einstellungen eingeben",
+                         "Inserisci il tuo locator in ⚙ Impostazioni",
+                         "Informe seu locator em ⚙ Configurações"),
+    "fenetre_complete": ("Fenêtre complète", "Full window", "Ventana completa",
+                         "Vollständiges Fenster", "Finestra completa", "Janela completa"),
+    "quitter": ("Quitter", "Quit", "Salir", "Beenden", "Esci", "Sair"),
+    "indicatif": ("Indicatif", "Callsign", "Indicativo", "Rufzeichen", "Nominativo", "Indicativo"),
+    "locator": ("Locator (QTH)", "Locator (QTH)", "Locator (QTH)", "Locator (QTH)",
+                "Locator (QTH)", "Locator (QTH)"),
+    "langue": ("Langue", "Language", "Idioma", "Sprache", "Lingua", "Idioma"),
+    "demarrage": ("Démarrer avec Windows", "Start with Windows", "Iniciar con Windows",
+                  "Mit Windows starten", "Avvia con Windows", "Iniciar com o Windows"),
+    "windows_seul": ("(Windows uniquement)", "(Windows only)", "(solo Windows)", "(nur Windows)",
+                     "(solo Windows)", "(apenas Windows)"),
+    "rouvre": ("L'horloge rouvre dans la dernière vue utilisée (ex. Compact).",
+               "The clock reopens in the last view used (e.g. Compact).",
+               "El reloj se abre en la última vista usada (p. ej. Compacto).",
+               "Die Uhr öffnet in der zuletzt genutzten Ansicht (z. B. Kompakt).",
+               "L'orologio si riapre nell'ultima vista usata (es. Compatto).",
+               "O relógio reabre na última visualização usada (ex. Compacto)."),
+    "enregistrer": ("Enregistrer", "Save", "Guardar", "Speichern", "Salva", "Salvar"),
+    "locator_invalide": ("Locator invalide (ex. IN98QR).", "Invalid locator (e.g. IN98QR).",
+                         "Locator no válido (p. ej. IN98QR).", "Ungültiger Locator (z. B. IN98QR).",
+                         "Locator non valido (es. IN98QR).", "Locator inválido (ex. IN98QR)."),
+    "demarrage_err": ("Impossible de régler le démarrage :\n{e}", "Could not set up startup:\n{e}",
+                      "No se pudo configurar el inicio:\n{e}",
+                      "Autostart konnte nicht eingerichtet werden:\n{e}",
+                      "Impossibile impostare l'avvio:\n{e}",
+                      "Não foi possível configurar a inicialização:\n{e}"),
+    "sauvegarde": ("Sauvegarde", "Saving", "Guardado", "Speichern", "Salvataggio", "Salvamento"),
+    "sauvegarde_err": ("Impossible de sauvegarder :\n{e}", "Could not save:\n{e}",
+                       "No se pudo guardar:\n{e}", "Speichern fehlgeschlagen:\n{e}",
+                       "Impossibile salvare:\n{e}", "Não foi possível salvar:\n{e}"),
+    "tz_install": ("Installation de la base des fuseaux horaires…\n(une seule fois)",
+                   "Installing the time zone database…\n(one time only)",
+                   "Instalando la base de husos horarios…\n(solo una vez)",
+                   "Zeitzonen-Datenbank wird installiert…\n(nur einmal)",
+                   "Installazione del database dei fusi orari…\n(una sola volta)",
+                   "Instalando a base de fusos horários…\n(apenas uma vez)"),
+    "tz_echec_titre": ("Fuseaux horaires manquants", "Missing time zones", "Faltan husos horarios",
+                       "Zeitzonen fehlen", "Fusi orari mancanti", "Fusos horários ausentes"),
+    "tz_echec": ("La base des fuseaux horaires est absente et l'installation\n"
+                 "automatique a échoué (pas d'Internet ?).\n\n"
+                 "Ouvre une invite de commandes et tape :\n\n    py -m pip install tzdata\n\n"
+                 "puis relance le programme.",
+                 "The time zone database is missing and the automatic\n"
+                 "installation failed (no Internet?).\n\n"
+                 "Open a command prompt and type:\n\n    py -m pip install tzdata\n\n"
+                 "then restart the program.",
+                 "Falta la base de husos horarios y la instalación\n"
+                 "automática ha fallado (¿sin Internet?).\n\n"
+                 "Abre una ventana de comandos y escribe:\n\n    py -m pip install tzdata\n\n"
+                 "y vuelve a iniciar el programa.",
+                 "Die Zeitzonen-Datenbank fehlt und die automatische\n"
+                 "Installation ist fehlgeschlagen (kein Internet?).\n\n"
+                 "Eingabeaufforderung öffnen und eingeben:\n\n    py -m pip install tzdata\n\n"
+                 "dann das Programm neu starten.",
+                 "Il database dei fusi orari manca e l'installazione\n"
+                 "automatica non è riuscita (niente Internet?).\n\n"
+                 "Apri un prompt dei comandi e digita:\n\n    py -m pip install tzdata\n\n"
+                 "poi riavvia il programma.",
+                 "A base de fusos horários está ausente e a instalação\n"
+                 "automática falhou (sem Internet?).\n\n"
+                 "Abra um prompt de comando e digite:\n\n    py -m pip install tzdata\n\n"
+                 "e reinicie o programa."),
+}
+
+# Noms des pays affichés par défaut : id -> (fr, en, es, de, it, pt)
+NOMS_DEFAUT = {
+    "FR": ("France", "France", "Francia", "Frankreich", "Francia", "França"),
+    "GB": ("Royaume-Uni", "United Kingdom", "Reino Unido", "Großbritannien", "Regno Unito",
+           "Reino Unido"),
+    "US_E": ("USA Est", "US East", "EE. UU. Este", "USA Ost", "USA Est", "EUA Leste"),
+    "US_O": ("USA Ouest", "US West", "EE. UU. Oeste", "USA West", "USA Ovest", "EUA Oeste"),
+    "BR": ("Brésil", "Brazil", "Brasil", "Brasilien", "Brasile", "Brasil"),
+    "US_AK": ("Alaska", "Alaska", "Alaska", "Alaska", "Alaska", "Alasca"),
+    "US_HI": ("Hawaï", "Hawaii", "Hawái", "Hawaii", "Hawaii", "Havaí"),
+    "RU": ("Russie (Moscou)", "Russia (Moscow)", "Rusia (Moscú)", "Russland (Moskau)",
+           "Russia (Mosca)", "Rússia (Moscou)"),
+    "AE": ("Émirats", "UAE", "Emiratos", "Emirate", "Emirati", "Emirados"),
+    "IN": ("Inde", "India", "India", "Indien", "India", "Índia"),
+    "CN": ("Chine", "China", "China", "China", "Cina", "China"),
+    "JP": ("Japon", "Japan", "Japón", "Japan", "Giappone", "Japão"),
+    "AU_E": ("Australie Est", "Australia East", "Australia Este", "Australien Ost",
+             "Australia Est", "Austrália Leste"),
+    "NZ": ("Nouvelle-Zélande", "New Zealand", "Nueva Zelanda", "Neuseeland", "Nuova Zelanda",
+           "Nova Zelândia"),
+    "ZA": ("Afrique du Sud", "South Africa", "Sudáfrica", "Südafrika", "Sudafrica",
+           "África do Sul"),
+    "RE": ("La Réunion", "Réunion", "Reunión", "Réunion", "Riunione", "Reunião"),
+}
+
+LANGUE = ["fr"]  # langue active (liste pour pouvoir la modifier)
+
+
+def T(cle, **kw):
+    """Texte traduit dans la langue active."""
+    vals = TEXTES.get(cle)
+    if vals is None:
+        return cle
+    txt = vals[LANGUES.index(LANGUE[0])]
+    return txt.format(**kw) if kw else txt
+
+
+_CACHE_PAYS = {}
+
+
+def nom_pays(cc):
+    lg = LANGUE[0]
+    if lg not in _CACHE_PAYS:
+        _CACHE_PAYS[lg] = dict(x.split("=", 1) for x in NOMS_PAYS[lg].split("|"))
+    return _CACHE_PAYS[lg].get(cc, cc)
+
+
+def langue_systeme():
+    """Langue de Windows (ou du système) si elle est proposée, sinon anglais."""
+    candidats = []
+    try:
+        import locale
+        if os.name == "nt":
+            import ctypes
+            lcid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+            candidats.append(locale.windows_locale.get(lcid))
+        candidats.append(locale.getlocale()[0])
+    except Exception:
+        pass
+    for var in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
+        candidats.append(os.environ.get(var))
+    for c in candidats:
+        if c and c[:2].lower() in LANGUES:
+            return c[:2].lower()
+    return "en"
+
+
 # ---------------------------------------------------------------- propagation
 URL_HAMQSL = "https://www.hamqsl.com/solarxml.php"
 URL_KC2G_STATIONS = "https://prop.kc2g.com/api/stations.json"
@@ -430,11 +917,8 @@ def recuperer_donnees():
     return res
 
 
-FR_BANDES = {"Good": ("Bon", "#1f7a4d"), "Fair": ("Moyen", "#8f6514"), "Poor": ("Mauvais", "#7f2d2d")}
-FR_GEOMAG = {"VR QUIET": "très calme", "QUIET": "calme", "UNSETTLD": "instable",
-             "ACTIVE": "actif", "MIN STORM": "orage mineur", "MAJ STORM": "orage majeur",
-             "SEV STORM": "orage sévère", "EXT STORM": "orage extrême"}
-VHF_NOMS = {("vhf-aurora", "northern_hemi"): "Aurore", ("E-Skip", "europe"): "Es EU 2m",
+BANDES_COUL = {"Good": "#1f7a4d", "Fair": "#8f6514", "Poor": "#7f2d2d"}
+VHF_NOMS = {("vhf-aurora", "northern_hemi"): None, ("E-Skip", "europe"): "Es EU 2m",
             ("E-Skip", "europe_4m"): "Es EU 4m", ("E-Skip", "europe_6m"): "Es EU 6m",
             ("E-Skip", "north_america"): "Es NA"}
 VERT, ORANGE, ROUGE = "#5fd38a", "#ffb347", "#ff6b6b"
@@ -466,7 +950,12 @@ def couleur_indice(cle, val):
 
 # ---------------------------------------------------------------- utilitaires
 def fmt_date(dt):
-    return f"{JOURS[dt.weekday()]} {dt.day} {MOIS[dt.month - 1]}"
+    jours, mois = DATES[LANGUE[0]]
+    if LANGUE[0] == "en":
+        return f"{jours[dt.weekday()]} {dt.day} {mois[dt.month - 1]}"
+    if LANGUE[0] == "de":
+        return f"{jours[dt.weekday()]} {dt.day}. {mois[dt.month - 1]}"
+    return f"{jours[dt.weekday()]} {dt.day} {mois[dt.month - 1]}"
 
 
 def fmt_offset(dt):
@@ -478,7 +967,7 @@ def fmt_offset(dt):
 
 def fmt_latlon(lat, lon):
     return (f"{abs(lat):.1f}°{'N' if lat >= 0 else 'S'} "
-            f"{abs(lon):.1f}°{'E' if lon >= 0 else 'O'}")
+            f"{abs(lon):.1f}°{'E' if lon >= 0 else ('W' if LANGUE[0] in ('en', 'de') else 'O')}")
 
 
 def fmt_km(km):
@@ -628,13 +1117,7 @@ def coords_fuseaux():
                 except ValueError:
                     pass
 
-    noms = {}
-    for ligne in iso.splitlines():
-        if ligne and not ligne.startswith("#") and "\t" in ligne:
-            code, nom = ligne.split("\t", 1)
-            noms[code] = nom.strip()
-    noms.update(PAYS_FR)
-    return table, {tz: noms.get(cc, cc) for tz, cc in pays_tz.items()}
+    return table, pays_tz
 
 
 def charger_config():
@@ -655,7 +1138,7 @@ def sauver_config(cfg):
         with open(CONFIG, "w", encoding="utf-8") as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        messagebox.showwarning("Sauvegarde", f"Impossible de sauvegarder :\n{e}")
+        messagebox.showwarning(T("sauvegarde"), T("sauvegarde_err", e=e))
 
 
 def decoder_masque():
@@ -875,6 +1358,18 @@ class Afficheur(tk.Canvas):
             self.itemconfigure(it, text=ch)
 
 
+def nom_ville(v):
+    """Nom affiché d'une carte : nom personnalisé, sinon traduit automatiquement."""
+    if v.get("nom"):
+        return v["nom"]
+    if v.get("id") in NOMS_DEFAUT:
+        return NOMS_DEFAUT[v["id"]][LANGUES.index(LANGUE[0])]
+    if v.get("cc"):
+        p = nom_pays(v["cc"])
+        return f"{p} ({v['ville']})" if v.get("ville") else p
+    return v.get("tz", "?").split("/")[-1].replace("_", " ")
+
+
 COULEURS_ETAT = {"jour": ACCENT, "grayline": CORAIL, "crépuscule": LUNE, "nuit": LUNE}
 ICONES_ETAT = {"jour": "☀", "grayline": "◐", "crépuscule": "☾", "nuit": "☾"}
 
@@ -904,7 +1399,7 @@ class CarteVille(tk.Frame):
 
         haut = tk.Frame(f, bg=PANNEAU)
         haut.pack(fill="x")
-        self.l_nom = tk.Label(haut, text=ville["nom"], font=F("titre", 12, "bold"),
+        self.l_nom = tk.Label(haut, text=nom_ville(ville), font=F("titre", 12, "bold"),
                               fg=TEXTE, bg=PANNEAU, anchor="w")
         self.l_nom.pack(side="left")
         self.l_icone = tk.Label(haut, text="", font=F("txt", 12), fg=ACCENT, bg=PANNEAU)
@@ -929,7 +1424,7 @@ class CarteVille(tk.Frame):
 
     def menu(self, event):
         m = tk.Menu(self, tearoff=0)
-        m.add_command(label=f"Supprimer {self.ville['nom']}",
+        m.add_command(label=T("supprimer", nom=nom_ville(self.ville)),
                       command=lambda: self.app.supprimer(self.ville))
         m.tk_popup(event.x_root, event.y_root)
 
@@ -974,7 +1469,6 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         choisir_polices(self)
-        self.title(APP)
         self.configure(bg=FOND)
         self.minsize(780, 420)
         self.option_add("*Font", F("txt", 9))
@@ -985,10 +1479,17 @@ class App(tk.Tk):
             pass
 
         self.cfg = charger_config()
+        self.premier_lancement = not os.path.exists(CONFIG)
+        if self.cfg.get("langue") not in LANGUES:
+            # anciennes versions (françaises) : garder le français
+            self.cfg["langue"] = "fr" if not self.premier_lancement else langue_systeme()
+        LANGUE[0] = self.cfg["langue"]
+        self.relancer = False
         self.coords_tz, self.pays_tz = coords_fuseaux()
         self.secondes = tk.BooleanVar(value=self.cfg.get("secondes", False))
         self.premier_plan = tk.BooleanVar(value=self.cfg.get("premier_plan", False))
         self.attributes("-topmost", self.premier_plan.get())
+        self.title(T("app"))
         self.maj_qth()
 
         self.villes = []
@@ -997,9 +1498,7 @@ class App(tk.Tk):
                 ZoneInfo(v["tz"])
             except (ZoneInfoNotFoundError, KeyError, ValueError):
                 continue
-            if v.get("nom") in ANCIENS_NOMS and \
-                    any(d["tz"] == v["tz"] for d in VILLES_DEFAUT):
-                v["nom"] = ANCIENS_NOMS[v["nom"]]
+            self.migrer_nom(v)
             if v.get("lat") is None and v["tz"] in self.coords_tz:
                 v["lat"], v["lon"] = self.coords_tz[v["tz"]]
             self.villes.append(v)
@@ -1021,9 +1520,37 @@ class App(tk.Tk):
             self.after(50, self.ouvrir_compact)
         self.protocol("WM_DELETE_WINDOW", self.quitter)
         barre_titre_sombre(self)
+        if self.premier_lancement:
+            self.after(400, self.dialogue_reglages)
         self.tick()
 
     # ------------------------------------------------------------ config
+    def migrer_nom(self, v):
+        """Anciennes versions : noms en clair -> id / code pays (traduisibles)."""
+        nom = v.get("nom")
+        if not nom or v.get("id") or v.get("cc"):
+            return
+        defaut = {d["tz"]: d["id"] for d in VILLES_DEFAUT}
+        ident = ANCIENS_NOMS.get(nom)
+        if ident is None and v["tz"] in defaut:
+            if nom in NOMS_DEFAUT.get(defaut[v["tz"]], ()):
+                ident = defaut[v["tz"]]
+        if ident and defaut.get(v["tz"]) == ident:
+            v["id"] = ident
+            del v["nom"]
+            return
+        cc = self.pays_tz.get(v["tz"])
+        if cc:
+            ville = v["tz"].split("/")[-1].replace("_", " ")
+            noms_fr = dict(x.split("=", 1) for x in NOMS_PAYS["fr"].split("|"))
+            pays = noms_fr.get(cc, "")
+            if nom == pays:
+                v["cc"] = cc
+                del v["nom"]
+            elif nom == f"{pays} ({ville})":
+                v["cc"], v["ville"] = cc, ville
+                del v["nom"]
+
     def sauver(self):
         self.cfg["villes"] = self.villes
         self.cfg["secondes"] = self.secondes.get()
@@ -1038,6 +1565,11 @@ class App(tk.Tk):
 
     def quitter(self):
         self.sauver()
+        try:  # annuler les minuteries en attente (utile lors d'une relance)
+            for ident in self.tk.splitlist(self.tk.call("after", "info")):
+                self.after_cancel(ident)
+        except tk.TclError:
+            pass
         self.destroy()
 
     # ------------------------------------------------------------ en-tête
@@ -1067,8 +1599,8 @@ class App(tk.Tk):
             d.pack(anchor="w")
             return aff, d
 
-        self.aff_utc, self.l_utc_date = bloc(0, "UTC", UTC_COUL, "temps universel")
-        self.aff_loc, self.l_loc_date = bloc(1, "LOCAL", ACCENT, "heure du PC")
+        self.aff_utc, self.l_utc_date = bloc(0, "UTC", UTC_COUL, T("utc_sous"))
+        self.aff_loc, self.l_loc_date = bloc(1, T("local"), ACCENT, T("local_sous"))
 
         cadre, f = self.panneau(tete, QTH_COUL)
         cadre.grid(row=0, column=2, sticky="nsew", padx=(10, 0))
@@ -1103,12 +1635,12 @@ class App(tk.Tk):
     def construire_barre(self):
         barre = tk.Frame(self, bg=FOND, padx=16)
         barre.pack(fill="x", pady=(0, 4))
-        Bascule(barre, "Secondes", self.secondes, self.basculer_secondes).pack(side="left")
-        Bascule(barre, "Toujours au premier plan", self.premier_plan,
+        Bascule(barre, T("secondes"), self.secondes, self.basculer_secondes).pack(side="left")
+        Bascule(barre, T("premier_plan"), self.premier_plan,
                 self.basculer_premier_plan).pack(side="left", padx=(18, 0))
-        self.bouton(barre, "⚙  Réglages", self.dialogue_reglages).pack(side="right")
-        self.segments = Segments(barre, (("villes", "Pays"), ("carte", "Carte"),
-                                         ("compact", "Compact")), self.afficher_vue)
+        self.bouton(barre, "⚙  " + T("reglages"), self.dialogue_reglages).pack(side="right")
+        self.segments = Segments(barre, (("villes", T("vue_pays")), ("carte", T("vue_carte")),
+                                         ("compact", T("vue_compact"))), self.afficher_vue)
         self.segments.pack(side="right", padx=(0, 10))
 
     def basculer_secondes(self):
@@ -1140,14 +1672,14 @@ class App(tk.Tk):
         outils.pack(fill="x", pady=(6, 0))
         leg = tk.Frame(outils, bg=FOND)
         leg.pack(side="left")
-        for coul, txt in ((ACCENT, "jour"), (CORAIL, "grayline"), (LUNE, "nuit")):
+        for coul, txt in ((ACCENT, T("jour")), (CORAIL, T("grayline")), (LUNE, T("nuit"))):
             tk.Frame(leg, bg=coul, width=10, height=10).pack(side="left", padx=(0, 4))
             tk.Label(leg, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=FOND).pack(
                 side="left", padx=(0, 12))
-        tk.Label(leg, text="·   clic droit sur un pays pour le supprimer", font=F("txt", 8),
+        tk.Label(leg, text="·   " + T("aide_suppr"), font=F("txt", 8),
                  fg=TEXTE_DIM, bg=FOND).pack(side="left")
-        self.bouton(outils, "+  Ajouter", self.dialogue_ajout, primaire=True).pack(side="right")
-        self.bouton(outils, "Défaut", self.reinitialiser).pack(side="right", padx=6)
+        self.bouton(outils, "+  " + T("ajouter"), self.dialogue_ajout, primaire=True).pack(side="right")
+        self.bouton(outils, T("defaut"), self.reinitialiser).pack(side="right", padx=6)
 
         self.grille = tk.Frame(self.page_villes, bg=FOND, padx=11, pady=6)
         self.grille.pack(fill="both", expand=True, pady=(0, 8))
@@ -1174,7 +1706,7 @@ class App(tk.Tk):
         self.construire_grille()
 
     def reinitialiser(self):
-        if messagebox.askyesno("Réinitialiser", "Revenir à la liste de villes par défaut ?"):
+        if messagebox.askyesno(T("reinit_titre"), T("reinit_q")):
             self.villes = json.loads(json.dumps(VILLES_DEFAUT))
             self.sauver()
             self.construire_grille()
@@ -1184,15 +1716,18 @@ class App(tk.Tk):
         import unicodedata
         dispo = available_timezones()
         par_pays = {}
-        for tz, pays in self.pays_tz.items():
+        for tz, cc in self.pays_tz.items():
             if tz in dispo:
-                par_pays.setdefault(pays, []).append(tz)
+                par_pays.setdefault(cc, []).append(tz)
         entrees = []
-        for pays, fuseaux in par_pays.items():
+        for cc, fuseaux in par_pays.items():
+            pays = nom_pays(cc)
             for tz in fuseaux:
                 ville = tz.split("/")[-1].replace("_", " ")
-                nom = pays if len(fuseaux) == 1 else f"{pays} ({ville})"
-                entrees.append((f"{pays}  —  {ville}", tz, nom))
+                v = {"tz": tz, "cc": cc}
+                if len(fuseaux) > 1:
+                    v["ville"] = ville
+                entrees.append((f"{pays}  —  {ville}", tz, v))
 
         def cle(e):
             return unicodedata.normalize("NFD", e[0]).encode("ascii", "ignore").decode().lower()
@@ -1203,23 +1738,22 @@ class App(tk.Tk):
         import unicodedata
         entrees = self.entrees_pays()
         if not entrees:
-            messagebox.showerror("Fuseaux", "Aucun fuseau horaire disponible.\n"
-                                 "Installe-les avec :  py -m pip install tzdata")
+            messagebox.showerror(T("fuseaux"), T("fuseaux_aucun"))
             return
 
         def sans_accent(t):
             return unicodedata.normalize("NFD", t).encode("ascii", "ignore").decode().lower()
 
-        index = [sans_accent(lib + " " + tz) for lib, tz, _ in entrees]
+        index = [sans_accent(lib + " " + tz + " " + v["cc"]) for lib, tz, v in entrees]
 
         d = tk.Toplevel(self)
-        d.title("Ajouter un pays")
+        d.title(T("ajout_titre"))
         d.configure(bg=FOND, padx=16, pady=14)
         d.transient(self)
         barre_titre_sombre(d)
         d.grab_set()
 
-        tk.Label(d, text="Recherche (pays ou ville, ex. Canada, Italie, Tokyo)",
+        tk.Label(d, text=T("ajout_rech"),
                  bg=FOND, fg=TEXTE_DIM, font=F("txt", 9)).grid(row=0, column=0, sticky="w")
         e_rech = style_entree(tk.Entry(d, width=40))
         e_rech.grid(row=1, column=0, sticky="we", ipady=3, pady=(2, 0))
@@ -1228,7 +1762,7 @@ class App(tk.Tk):
                         highlightcolor=BORD, selectbackground=SEL, selectforeground=TEXTE,
                         activestyle="none", font=F("txt", 10))
         lb.grid(row=2, column=0, sticky="nsew", pady=8)
-        tk.Label(d, text="Nom affiché", bg=FOND, fg=TEXTE_DIM,
+        tk.Label(d, text=T("ajout_nom"), bg=FOND, fg=TEXTE_DIM,
                  font=F("txt", 9)).grid(row=3, column=0, sticky="w")
         e_nom = style_entree(tk.Entry(d, width=40))
         e_nom.grid(row=4, column=0, sticky="we", ipady=3, pady=(2, 10))
@@ -1247,15 +1781,18 @@ class App(tk.Tk):
             sel = lb.curselection()
             if sel:
                 e_nom.delete(0, "end")
-                e_nom.insert(0, visibles[sel[0]][2])
+                e_nom.insert(0, nom_ville(visibles[sel[0]][2]))
 
         def valider(_=None):
             sel = lb.curselection()
             if not sel:
-                messagebox.showinfo("Ajouter", "Choisis un pays dans la liste.", parent=d)
+                messagebox.showinfo(T("ajouter"), T("ajout_choisir"), parent=d)
                 return
-            _, tz, nom = visibles[sel[0]]
-            v = {"nom": e_nom.get().strip() or nom, "tz": tz}
+            _, tz, modele = visibles[sel[0]]
+            v = dict(modele)
+            saisi = e_nom.get().strip()
+            if saisi and saisi != nom_ville(modele):
+                v["nom"] = saisi  # nom personnalisé : n'est plus traduit
             if tz in self.coords_tz:
                 v["lat"], v["lon"] = self.coords_tz[tz]
             self.villes.append(v)
@@ -1267,7 +1804,7 @@ class App(tk.Tk):
         lb.bind("<<ListboxSelect>>", choisir)
         lb.bind("<Double-Button-1>", valider)
         d.bind("<Return>", valider)
-        self.bouton(d, "Ajouter", valider, primaire=True).grid(row=5, column=0, sticky="e")
+        self.bouton(d, T("ajouter"), valider, primaire=True).grid(row=5, column=0, sticky="e")
         filtrer()
         e_rech.focus_set()
 
@@ -1279,7 +1816,7 @@ class App(tk.Tk):
         self.canvas = tk.Canvas(cadre, width=CARTE_L, height=CARTE_H, bg="#09111c",
                                 highlightthickness=0)
         self.canvas.pack()
-        self.l_survol = tk.Label(p, text="Survole la carte : locator, distance et azimut depuis le QTH",
+        self.l_survol = tk.Label(p, text=T("survol_aide"),
                                  font=F("mono", 9), fg=TEXTE_DIM, bg=FOND)
         self.l_survol.pack(pady=(4, 0))
 
@@ -1288,7 +1825,8 @@ class App(tk.Tk):
         cal.pack(fill="x", padx=20, pady=(6, 0))
         calques = self.cfg.setdefault("calques", {"muf": True, "stations": True, "aurore": True})
         self.v_calques = {}
-        for cle, texte in (("muf", "MUF"), ("stations", "Ionosondes"), ("aurore", "Ovale auroral")):
+        for cle, texte in (("muf", "MUF"), ("stations", T("cal_stations")),
+                           ("aurore", T("cal_aurore"))):
             v = tk.BooleanVar(value=calques.get(cle, True))
             self.v_calques[cle] = v
             Bascule(cal, texte, v, self.changer_calques).pack(side="left", padx=(0, 16))
@@ -1307,27 +1845,28 @@ class App(tk.Tk):
         cadre_g, gauche = self.panneau(tab, UTC_COUL)
         cadre_g.pack(side="left", fill="both", expand=True)
         gauche.configure(padx=10, pady=6)
-        tk.Label(gauche, text="INDICES SOLAIRES", font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+        tk.Label(gauche, text=T("indices"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
                  bg=PANNEAU).grid(row=0, column=0, columnspan=5, sticky="w", pady=(0, 2))
         self.ind = {}
         cases = [("solarflux", "SFI"), ("sunspots", "SSN"), ("aindex", "A"), ("kindex", "K"),
-                 ("xray", "Rayons X"), ("solarwind", "Vent km/s"), ("magneticfield", "Bz nT"),
-                 ("geomagfield", "Géomag."), ("signalnoise", "Bruit"), ("aurora", "Aurore")]
+                 ("xray", T("i_xray")), ("solarwind", T("i_vent")), ("magneticfield", "Bz nT"),
+                 ("geomagfield", T("i_geomag")), ("signalnoise", T("i_bruit")),
+                 ("aurora", T("i_aurore"))]
         for i, (cle, titre) in enumerate(cases):
             f = tk.Frame(gauche, bg=PANNEAU)
             f.grid(row=1 + i // 5, column=i % 5, padx=(0, 14), pady=2, sticky="w")
             tk.Label(f, text=titre, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU).pack(anchor="w")
             l = tk.Label(f, text="—", font=F("num", 14, "bold"), fg=TEXTE, bg=PANNEAU,
-                         width=8 if cle == "geomagfield" else 6, anchor="w")
+                         width=12 if cle == "geomagfield" else 6, anchor="w")
             l.pack(anchor="w")
             self.ind[cle] = l
 
         cadre_d, droite = self.panneau(tab, ACCENT)
         cadre_d.pack(side="right", fill="y", padx=(10, 0))
         droite.configure(padx=10, pady=6)
-        tk.Label(droite, text="BANDES HF", font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+        tk.Label(droite, text=T("bandes_hf"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
                  bg=PANNEAU).grid(row=0, column=0, sticky="w")
-        for j, t in enumerate(("Jour", "Nuit")):
+        for j, t in enumerate((T("Jour"), T("Nuit"))):
             tk.Label(droite, text=t, font=F("txt", 8), fg=TEXTE_DIM,
                      bg=PANNEAU).grid(row=0, column=j + 1)
         self.cases_bandes = {}
@@ -1344,7 +1883,7 @@ class App(tk.Tk):
         self.l_muf_qth.pack(fill="x", padx=20, pady=(8, 0))
         self.l_vhf = tk.Label(p, text="", font=F("txt", 9), fg=TEXTE_DIM, bg=FOND, anchor="w")
         self.l_vhf.pack(fill="x", padx=20)
-        self.l_sources = tk.Label(p, text="Chargement des données de propagation…",
+        self.l_sources = tk.Label(p, text=T("chargement"),
                                   font=F("txt", 8), fg=TEXTE_DIM, bg=FOND, anchor="w")
         self.l_sources.pack(fill="x", padx=20, pady=(2, 10))
 
@@ -1423,7 +1962,7 @@ class App(tk.Tk):
             for cle, l in self.ind.items():
                 val = sol.get(cle, "") or "—"
                 if cle == "geomagfield":
-                    val = FR_GEOMAG.get(val.upper(), val.lower())
+                    val = T(val.upper()) if val.upper() in TEXTES else val.lower()
                 elif cle == "solarwind":
                     try:
                         val = f"{float(val):.0f}"
@@ -1431,12 +1970,13 @@ class App(tk.Tk):
                         pass
                 l.configure(text=val, fg=couleur_indice(cle, sol.get(cle, "")))
             for (bande, moment), l in self.cases_bandes.items():
-                txt, coul = FR_BANDES.get(sol["bandes"].get((bande, moment), ""), ("—", PANNEAU2))
+                etat = sol["bandes"].get((bande, moment), "")
+                txt, coul = (T(etat), BANDES_COUL[etat]) if etat in BANDES_COUL else ("—", PANNEAU2)
                 l.configure(text=txt, bg=coul)
             vhf = []
             for nom, lieu, val in sol.get("vhf", []):
-                etiquette = VHF_NOMS.get((nom, lieu), f"{nom} {lieu}")
-                vhf.append(f"{etiquette} : {'fermé' if 'closed' in val.lower() else val}")
+                etiquette = VHF_NOMS.get((nom, lieu), f"{nom} {lieu}") or T("vhf_aurore")
+                vhf.append(f"{etiquette} : {T('ferme') if 'closed' in val.lower() else val}")
             self.l_vhf.configure(text="VHF  ·  " + "   ".join(vhf) if vhf else "")
         # MUF de l'ionosonde la plus proche du QTH
         stations = self.prop.get("stations") or []
@@ -1446,14 +1986,15 @@ class App(tk.Tk):
             st = stations[i]
             fof2 = f"  ·  foF2 {st['fof2']:.1f} MHz" if st.get("fof2") else ""
             self.l_muf_qth.configure(
-                text=f"Ionosonde la plus proche : {st['nom']} ({fmt_km(d)})  ·  "
-                     f"MUF(3000) {st['muf']:.1f} MHz{fof2}  ·  il y a {st['age']:.0f} min")
+                text=T("iono_proche", nom=st["nom"], dist=fmt_km(d))
+                + f"  ·  MUF(3000) {st['muf']:.1f} MHz{fof2}  ·  "
+                + T("il_y_a", n=f"{st['age']:.0f}"))
         elif self.qth:
-            self.l_muf_qth.configure(text="Ionosonde la plus proche : pas de mesure récente")
+            self.l_muf_qth.configure(text=T("iono_aucune"))
         # sources
         morceaux = []
         if sol:
-            morceaux.append(f"Indices N0NBH : {sol.get('updated', '')}")
+            morceaux.append(T("src_indices", t=sol.get("updated", "")))
         for cle, nom in (("stations", "KC2G"), ("aurore", "NOAA")):
             h = self.prop.get("heure_" + cle)
             if h:
@@ -1462,8 +2003,8 @@ class App(tk.Tk):
                     "aurore": "NOAA"}
         err = [noms_err[e] for e in self.prop.get("erreurs", [])]
         if err:
-            morceaux.append("indisponible : " + ", ".join(err))
-        self.l_sources.configure(text="  ·  ".join(morceaux) + "  ·  mise à jour toutes les 15 min",
+            morceaux.append(T("src_indispo", l=", ".join(err)))
+        self.l_sources.configure(text="  ·  ".join(morceaux + [T("src_maj")]),
                                  fg=ORANGE if err else TEXTE_DIM)
 
     @staticmethod
@@ -1586,7 +2127,7 @@ class App(tk.Tk):
                     fof2 = f"  foF2 {st['fof2']:.1f}" if st.get("fof2") else ""
                     self.l_survol.configure(
                         text=f"{st['nom']}  ·  MUF(3000) {st['muf']:.1f} MHz{fof2}"
-                             f"  ·  il y a {st['age']:.0f} min")
+                             f"  ·  " + T("il_y_a", n=f"{st['age']:.0f}"))
                     return
         # ville proche ?
         for v in self.villes:
@@ -1597,12 +2138,12 @@ class App(tk.Tk):
                 dt = now.astimezone(ZoneInfo(v["tz"]))
                 lat, lon = v["lat"], v["lon"]
                 h = hauteur_soleil(lat, lon, soleil(now))
-                txt = f"{v['nom']} {dt:%H:%M} ({fmt_date(dt)})  {latlon_vers_locator(lat, lon)}"
+                txt = f"{nom_ville(v)} {dt:%H:%M} ({fmt_date(dt)})  {latlon_vers_locator(lat, lon)}"
                 break
         if self.qth:
             d, az = distance_azimut(self.qth[0], self.qth[1], lat, lon)
             txt += f"  ·  {fmt_km(d)}  az {az:03.0f}°"
-        txt += f"  ·  soleil {h:+.0f}° {etat_soleil(h)}"
+        txt += "  ·  " + T("soleil", h=f"{h:+.0f}", etat=T(etat_soleil(h)))
         self.l_survol.configure(text=txt)
 
     # ------------------------------------------------------------ compact
@@ -1654,9 +2195,9 @@ class App(tk.Tk):
 
         def menu(e):
             m = tk.Menu(c, tearoff=0)
-            m.add_command(label="Fenêtre complète", command=self.fermer_compact)
+            m.add_command(label=T("fenetre_complete"), command=self.fermer_compact)
             m.add_separator()
-            m.add_command(label="Quitter", command=self.quitter)
+            m.add_command(label=T("quitter"), command=self.quitter)
             m.tk_popup(e.x_root, e.y_root)
 
         for w in (c, corps, bande, f, l1, self.c_utc, sep, self.c_loc, self.c_qth):
@@ -1678,36 +2219,55 @@ class App(tk.Tk):
     # ------------------------------------------------------------ réglages
     def dialogue_reglages(self):
         d = tk.Toplevel(self)
-        d.title("Réglages")
+        d.title(T("reglages"))
         d.configure(bg=FOND, padx=20, pady=16)
         d.transient(self)
         barre_titre_sombre(d)
         d.grab_set()
 
-        tk.Label(d, text="Indicatif", bg=FOND, fg=TEXTE_DIM,
-                 font=F("txt", 9)).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        def etiquette(texte, ligne):
+            tk.Label(d, text=texte, bg=FOND, fg=TEXTE_DIM, font=F("txt", 9)).grid(
+                row=ligne, column=0, sticky="w", padx=(0, 12))
+
+        # langue
+        etiquette(T("langue"), 0)
+        choix = {"langue": self.cfg.get("langue", LANGUE[0])}
+        ligne_l = tk.Frame(d, bg=FOND)
+        ligne_l.grid(row=0, column=1, sticky="w", pady=4)
+        l_nom_langue = tk.Label(ligne_l, text="", bg=FOND, fg=TEXTE_DIM, font=F("txt", 9))
+
+        def choisir_langue(code):
+            choix["langue"] = code
+            seg.choisir(code)
+            l_nom_langue.configure(text=NOMS_LANGUES[code])
+        seg = Segments(ligne_l, [(c, c.upper()) for c in LANGUES], choisir_langue)
+        for lab in seg.items.values():
+            lab.configure(padx=8)
+        seg.pack(side="left")
+        l_nom_langue.pack(side="left", padx=(10, 0))
+        choisir_langue(choix["langue"])
+
+        etiquette(T("indicatif"), 1)
         e_ind = style_entree(tk.Entry(d, width=14))
         e_ind.insert(0, self.cfg.get("indicatif", ""))
-        e_ind.grid(row=0, column=1, sticky="w", pady=4, ipady=3)
-        tk.Label(d, text="Locator (QTH)", bg=FOND, fg=TEXTE_DIM,
-                 font=F("txt", 9)).grid(row=1, column=0, sticky="w", padx=(0, 12))
+        e_ind.grid(row=1, column=1, sticky="w", pady=4, ipady=3)
+        etiquette(T("locator"), 2)
         e_loc = style_entree(tk.Entry(d, width=14))
         e_loc.insert(0, self.cfg.get("locator", ""))
-        e_loc.grid(row=1, column=1, sticky="w", pady=4, ipady=3)
+        e_loc.grid(row=2, column=1, sticky="w", pady=4, ipady=3)
 
         v_dem = tk.BooleanVar(value=demarrage_actif())
-        cb = Bascule(d, "Démarrer avec Windows", v_dem)
-        cb.grid(row=2, column=0, columnspan=2, sticky="w", pady=(14, 0))
+        cb = Bascule(d, T("demarrage"), v_dem)
+        cb.grid(row=3, column=0, columnspan=2, sticky="w", pady=(14, 0))
         if os.name != "nt":
-            cb.lb.configure(text="Démarrer avec Windows (Windows uniquement)")
-        tk.Label(d, text="L'horloge rouvre dans la dernière vue utilisée (ex. Compact).",
-                 bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
-            row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
+            cb.lb.configure(text=T("demarrage") + " " + T("windows_seul"))
+        tk.Label(d, text=T("rouvre"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
+            row=4, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
         def valider():
             loc = e_loc.get().strip().upper()
             if loc and not LOCATOR_RE.match(loc):
-                messagebox.showerror("Locator", "Locator invalide (ex. IN98QR).", parent=d)
+                messagebox.showerror("Locator", T("locator_invalide"), parent=d)
                 return
             self.cfg["indicatif"] = e_ind.get().strip().upper()
             self.cfg["locator"] = loc
@@ -1716,17 +2276,24 @@ class App(tk.Tk):
                 try:
                     regler_demarrage(v_dem.get())
                 except Exception as ex:
-                    messagebox.showerror("Démarrage", f"Impossible de régler le démarrage :\n{ex}",
-                                         parent=d)
+                    messagebox.showerror(T("demarrage"), T("demarrage_err", e=ex), parent=d)
+            nouvelle = choix["langue"] != self.cfg.get("langue")
+            self.cfg["langue"] = choix["langue"]
             self.sauver()
+            d.destroy()
+            if nouvelle:  # reconstruire toute l'interface dans la nouvelle langue
+                self.relancer = True
+                self.quitter()
+                return
             self._jour_lever = None
             self.maj_tableau()
             if self.vue == "carte":
                 self.dessiner_carte()
-            d.destroy()
 
-        self.bouton(d, "Enregistrer", valider, primaire=True).grid(row=4, column=1, sticky="e", pady=(16, 0))
+        self.bouton(d, T("enregistrer"), valider, primaire=True).grid(
+            row=5, column=1, sticky="e", pady=(16, 0))
         d.bind("<Return>", lambda e: valider())
+        e_ind.focus_set()
 
     # ------------------------------------------------------------ boucle
     def maj_qth_entete(self, now, sol, loc):
@@ -1734,7 +2301,7 @@ class App(tk.Tk):
             for l in (self.l_qth_titre, self.l_qth_loc, self.l_qth_icone, self.l_qth_soleil,
                       self.l_qth_hauteur):
                 l.configure(text="")
-            self.l_qth_lever.configure(text="Indique ton locator dans ⚙ Réglages")
+            self.l_qth_lever.configure(text=T("locator_manquant"))
             return
         h = hauteur_soleil(self.qth[0], self.qth[1], sol)
         etat = etat_soleil(h)
@@ -1742,15 +2309,16 @@ class App(tk.Tk):
         self.l_qth_titre.configure(text=self.cfg.get("indicatif", "") or "QTH")
         self.l_qth_loc.configure(text=self.cfg.get("locator", "").upper())
         self.l_qth_icone.configure(text=ICONES_ETAT[etat], fg=coul)
-        self.l_qth_soleil.configure(text=etat.capitalize(), fg=coul)
-        self.l_qth_hauteur.configure(text=f"soleil à {h:+.0f}° au QTH")
+        nom_etat = T(etat)
+        self.l_qth_soleil.configure(text=nom_etat[:1].upper() + nom_etat[1:], fg=coul)
+        self.l_qth_hauteur.configure(text=T("soleil_qth", h=f"{h:+.0f}"))
         jour = loc.date()
         if self._jour_lever != jour:
             self._jour_lever = jour
             minuit = loc.replace(hour=0, minute=0, second=0, microsecond=0)
             lev, cou = lever_coucher(self.qth[0], self.qth[1], minuit)
             f = (lambda t: t.astimezone().strftime("%H:%M") if t else "--:--")
-            self.l_qth_lever.configure(text=f"↑ lever {f(lev)}     ↓ coucher {f(cou)}")
+            self.l_qth_lever.configure(text=T("lever_coucher", l=f(lev), c=f(cou)))
 
     def tick(self):
         now = datetime.now(timezone.utc)
@@ -1829,9 +2397,9 @@ def verifier_fuseaux():
     ok = False
     if not GELE:
         r = tk.Tk()
-        r.title(APP)
+        r.title(T("app"))
         r.configure(bg=FOND, padx=30, pady=20)
-        tk.Label(r, text="Installation de la base des fuseaux horaires…\n(une seule fois)",
+        tk.Label(r, text=T("tz_install"),
                  bg=FOND, fg=TEXTE, font=("Segoe UI", 11)).pack()
         barre_titre_sombre(r)
         r.update()
@@ -1840,17 +2408,25 @@ def verifier_fuseaux():
     if not ok:
         r = tk.Tk()
         r.withdraw()
-        messagebox.showerror(
-            "Fuseaux horaires manquants",
-            "La base des fuseaux horaires est absente et l'installation\n"
-            "automatique a échoué (pas d'Internet ?).\n\n"
-            "Ouvre une invite de commandes et tape :\n\n"
-            "    py -m pip install tzdata\n\n"
-            "puis relance le programme.")
+        messagebox.showerror(T("tz_echec_titre"), T("tz_echec"))
         r.destroy()
     return ok
 
 
+def principal():
+    cfg = charger_config()
+    if cfg.get("langue") in LANGUES:
+        LANGUE[0] = cfg["langue"]
+    else:
+        LANGUE[0] = "fr" if os.path.exists(CONFIG) else langue_systeme()
+    if not verifier_fuseaux():
+        return
+    while True:  # relance après un changement de langue
+        app = App()
+        app.mainloop()
+        if not app.relancer:
+            break
+
+
 if __name__ == "__main__":
-    if verifier_fuseaux():
-        App().mainloop()
+    principal()

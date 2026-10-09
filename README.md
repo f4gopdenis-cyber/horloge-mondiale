@@ -1,80 +1,78 @@
-# Horloge mondiale F4GOP
+# World Clock F4GOP
 
-Horloge mondiale pour la station radioamateur, sur PC Windows : heure UTC et locale,
-fuseaux des pays, carte grayline et conditions de propagation HF en direct.
+🇫🇷 [Version française](README.fr.md)
 
-![Vue Pays](pays.png)
+World clock for the amateur radio shack, for Windows PCs: UTC and local time,
+country time zones, greyline map and live HF propagation conditions.
 
-## Fonctions
+**Available in 6 languages:** English, Français, Español, Deutsch, Italiano, Português
+(detected automatically from Windows, can be changed in ⚙ Settings).
 
-- **UTC et heure locale** en grand, avec le lever et le coucher du soleil au QTH.
-- **Pays du monde** : heure, date et décalage UTC. Chaque carte montre si le pays est
-  en jour, en grayline ou en nuit (calcul solaire réel) et une barre jour/nuit sur 24 h.
-  Ajout par recherche (« italie », « canada »…), suppression par clic droit.
-- **Carte grayline** : jour/nuit, terminateur, QTH et pays affichés. Au survol :
-  locator, distance, azimut depuis le QTH et hauteur du soleil.
-- **Propagation** (mise à jour toutes les 15 min) :
-  - courbes de **MUF(3000)** et mesures des **ionosondes** ;
-  - **ovale auroral** ;
-  - **indices** SFI, SSN, A, K, rayons X, vent solaire, Bz, géomagnétisme, bruit ;
-  - **bandes HF** jour/nuit et conditions **VHF** (Es, aurore) ;
-  - MUF de l'ionosonde la plus proche du QTH.
-- **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
-- **Démarrage avec Windows** (option dans les réglages).
+![Countries view](countries.png)
 
-![Vue Carte](carte.png)
+## Features
 
-*Capture réalisée avec des données de propagation simulées.*
+- **UTC and local time** in large digits, with sunrise and sunset at your QTH.
+- **Countries of the world**: time, date and UTC offset. Each card shows whether the
+  country is in daylight, greyline or night (real solar calculation) and a 24 h
+  day/night bar. Add countries by searching ("italy", "canada"…), remove with a right-click.
+- **Greyline map**: day/night, terminator, QTH and countries. On hover: locator,
+  distance, bearing from your QTH and sun elevation.
+- **Propagation** (refreshed every 15 min):
+  - **MUF(3000)** contours and **ionosonde** readings;
+  - **auroral oval**;
+  - **indices**: SFI, SSN, A, K, X-rays, solar wind, Bz, geomagnetic field, noise;
+  - **HF band conditions** day/night and **VHF** conditions (Es, aurora);
+  - MUF of the ionosonde nearest to your QTH.
+- **Compact mode**: small always-on-top UTC strip you can move anywhere.
+- **Start with Windows** (option in the settings).
 
-![Mode compact](compact.png)
+![Map view](map.png)
+
+*Screenshot taken with simulated propagation data.*
 
 ## Installation
 
-### Le plus simple : l'exécutable
+### Easiest: the executable
 
-Télécharger `HorlogeMondiale.exe` dans la page **Releases** du dépôt et le lancer.
-Rien d'autre à installer.
+Download `HorlogeMondiale.exe` from the **Releases** page and run it.
+Nothing else to install.
 
-> **Note :** au premier lancement, Windows peut afficher « Windows a protégé votre
-> ordinateur » (SmartScreen), car l'exécutable n'est pas signé. Cliquer sur
-> **Informations complémentaires** puis **Exécuter quand même**. Le code source
-> complet est disponible dans ce dépôt, et l'exécutable est compilé automatiquement
-> par GitHub Actions à partir de ce code.
+> **Note:** on first launch, Windows may show "Windows protected your PC"
+> (SmartScreen) because the executable is not code-signed. Click **More info**, then
+> **Run anyway**. The full source code is in this repository, and the executable is
+> built automatically by GitHub Actions from this code.
 
+### From the Python source
 
-### Depuis le code Python
-
-Python 3.9 ou plus récent. Sous Windows :
+Python 3.9 or later. On Windows:
 
     py -m pip install tzdata
     py horloge_mondiale.py
 
-Le module `tzdata` est installé automatiquement au premier lancement s'il manque.
-Renommer le fichier en `horloge_mondiale.pyw` évite la fenêtre console.
+`tzdata` is installed automatically on first launch if it is missing.
+Renaming the file to `horloge_mondiale.pyw` avoids the console window.
 
-### Construire l'exécutable soi-même
+## First launch
 
-Double-cliquer sur `construire_exe.bat` (installe PyInstaller et produit
-`HorlogeMondiale.exe`).
+The **⚙ Settings** window opens automatically: choose your language and enter your
+**callsign** and **locator**. They are used for the QTH panel, distances/bearings and
+picking the nearest ionosonde.
 
-## Premier lancement
+Settings are saved in `horloge_mondiale.json`, in your user folder.
 
-Ouvrir **⚙ Réglages** pour indiquer son **indicatif** et son **locator** : ils servent
-au panneau QTH, aux distances/azimuts et au choix de l'ionosonde la plus proche.
+## Data sources
 
-Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier utilisateur.
+- Solar indices and band conditions: [N0NBH — hamqsl.com](https://www.hamqsl.com/solar.html)
+- MUF and ionosondes: [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (GIRO data)
+- Auroral oval: [NOAA SWPC — OVATION model](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
+- Land outlines: `global-land-mask` Python package (NOAA GLOBE data)
+- Country, day and month names: Unicode CLDR
 
-## Sources des données
+Many thanks to these services for sharing their data with the community.
 
-- Indices solaires et conditions de bandes : [N0NBH — hamqsl.com](https://www.hamqsl.com/solar.html)
-- MUF et ionosondes : [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (données GIRO)
-- Ovale auroral : [NOAA SWPC — modèle OVATION](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
-- Contours des terres : paquet Python `global-land-mask` (données NOAA GLOBE)
+## License
 
-Merci à ces services de mettre leurs données à disposition de la communauté.
-
-## Licence
-
-MIT — voir [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
 73 de F4GOP
