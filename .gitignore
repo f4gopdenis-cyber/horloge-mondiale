@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+HorlogeMondiale.exe
+horloge_mondiale.json
