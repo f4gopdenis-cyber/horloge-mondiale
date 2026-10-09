@@ -35,6 +35,13 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
 Télécharger `HorlogeMondiale.exe` dans la page **Releases** du dépôt et le lancer.
 Rien d'autre à installer.
 
+> **Note :** au premier lancement, Windows peut afficher « Windows a protégé votre
+> ordinateur » (SmartScreen), car l'exécutable n'est pas signé. Cliquer sur
+> **Informations complémentaires** puis **Exécuter quand même**. Le code source
+> complet est disponible dans ce dépôt, et l'exécutable est compilé automatiquement
+> par GitHub Actions à partir de ce code.
+
+
 ### Depuis le code Python
 
 Python 3.9 ou plus récent. Sous Windows :
