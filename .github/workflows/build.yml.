@@ -1,0 +1,41 @@
+name: Construire l'exe Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer PyInstaller et tzdata
+        run: python -m pip install --upgrade pyinstaller tzdata
+
+      - name: Construire HorlogeMondiale.exe
+        run: >
+          python -m PyInstaller --noconfirm --onefile --windowed
+          --name HorlogeMondiale --icon horloge.ico
+          --collect-data tzdata horloge_mondiale.py
+
+      - name: Garder l'exe comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HorlogeMondiale
+          path: dist/HorlogeMondiale.exe
+
+      - name: Publier une release (sur tag vX.Y)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/HorlogeMondiale.exe
