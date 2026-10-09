@@ -3,7 +3,7 @@
 Horloge mondiale pour la station radioamateur, sur PC Windows : heure UTC et locale,
 fuseaux des pays, carte grayline et conditions de propagation HF en direct.
 
-![Vue Pays](docs/pays.png)
+![Vue Pays](pays.png)
 
 ## Fonctions
 
@@ -22,11 +22,11 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
 - **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
 - **Démarrage avec Windows** (option dans les réglages).
 
-![Vue Carte](docs/carte.png)
+![Vue Carte](carte.png)
 
 *Capture réalisée avec des données de propagation simulées.*
 
-![Mode compact](docs/compact.png)
+![Mode compact](compact.png)
 
 ## Installation
 
@@ -39,10 +39,8 @@ Rien d'autre à installer.
 
 Python 3.9 ou plus récent. Sous Windows :
 
-```
-py -m pip install tzdata
-py horloge_mondiale.py
-```
+    py -m pip install tzdata
+    py horloge_mondiale.py
 
 Le module `tzdata` est installé automatiquement au premier lancement s'il manque.
 Renommer le fichier en `horloge_mondiale.pyw` évite la fenêtre console.
