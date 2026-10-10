@@ -38,6 +38,11 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
   distance ; fenêtres EME communes avec un autre locator sur 48 h, avec courbe de hauteur sur 24 h.
 - **Avis de mise à jour** (nouveau en 1.5) : un bandeau s'affiche quand une nouvelle version est
   publiée sur GitHub.
+- **Pilotage du poste et du rotor** (nouveau en 1.6) : un double-clic sur un spot accorde le poste
+  (fréquence et mode) et tourne l'antenne vers le DX. Le poste est commandé via le partage CAT de
+  ton logiciel de log en **Hamlib NET rigctl** (OpsLog, Log4OM…, par défaut `127.0.0.1:4532`) :
+  aucun conflit de port COM. Le rotor passe par **PST Rotator** en UDP (`127.0.0.1:12000`) ou
+  directement par un contrôleur **GS-232A** en TCP.
 - **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
 - **Démarrage avec Windows** (option dans les réglages).
 

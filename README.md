@@ -36,6 +36,11 @@ country time zones, greyline map and live HF propagation conditions.
 - **Moon / EME** (new in 1.5): Moon phase, elevation and azimuth at your QTH, moonrise/set,
   distance; common EME windows with another locator over 48 h, with a 24 h elevation chart.
 - **Update notice** (new in 1.5): a banner appears when a new version is published on GitHub.
+- **Radio and rotator control** (new in 1.6): double-click a spot to tune the radio
+  (frequency and mode) and turn the antenna to the DX bearing. The radio is reached through your
+  logger's CAT sharing in **Hamlib NET rigctl** (OpsLog, Log4OM…, default `127.0.0.1:4532`), so
+  there is no COM port conflict. Rotator via **PST Rotator** UDP (`127.0.0.1:12000`) or directly
+  through a **GS-232A** TCP controller.
 - **Compact mode**: small always-on-top UTC strip you can move anywhere.
 - **Start with Windows** (option in the settings).
 

@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "1.5"
+VERSION = "1.6"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -852,6 +852,43 @@ TEXTES = {
                    "Elevación de la Luna en 24 h (UTC)", "Mondhöhe über 24 h (UTC)",
                    "Elevazione della Luna in 24 h (UTC)", "Elevação da Lua em 24 h (UTC)"),
     "en_cours": ("en cours", "now", "ahora", "jetzt", "in corso", "agora"),
+    "poste": ("Poste (Hamlib rigctl)", "Radio (Hamlib rigctl)", "Equipo (Hamlib rigctl)",
+              "Funkgerät (Hamlib rigctl)", "Radio (Hamlib rigctl)", "Rádio (Hamlib rigctl)"),
+    "rig_aide": ("Partage CAT de ton log (OpsLog, Log4OM…) en « Hamlib NET rigctl », port 4532",
+                 "Your logger's CAT sharing (OpsLog, Log4OM…) as “Hamlib NET rigctl”, port 4532",
+                 "CAT compartido de tu log (OpsLog, Log4OM…) en «Hamlib NET rigctl», puerto 4532",
+                 "CAT-Freigabe deines Logs (OpsLog, Log4OM…) als „Hamlib NET rigctl“, Port 4532",
+                 "Condivisione CAT del log (OpsLog, Log4OM…) come «Hamlib NET rigctl», porta 4532",
+                 "Compartilhamento CAT do log (OpsLog, Log4OM…) como «Hamlib NET rigctl», porta 4532"),
+    "rotor": ("Rotor", "Rotator", "Rotor", "Rotor", "Rotore", "Rotor"),
+    "aucun": ("Aucun", "None", "Ninguno", "Keiner", "Nessuno", "Nenhum"),
+    "rotor_aide": ("PST Rotator : activer la commande UDP (port 12000). GS-232A : adresse IP:port du contrôleur.",
+                   "PST Rotator: enable UDP control (port 12000). GS-232A: controller IP:port.",
+                   "PST Rotator: activar el control UDP (puerto 12000). GS-232A: IP:puerto del controlador.",
+                   "PST Rotator: UDP-Steuerung aktivieren (Port 12000). GS-232A: IP:Port des Controllers.",
+                   "PST Rotator: attivare il controllo UDP (porta 12000). GS-232A: IP:porta del controller.",
+                   "PST Rotator: ativar o controle UDP (porta 12000). GS-232A: IP:porta do controlador."),
+    "dblclic": ("Double-clic sur un spot : accorder le poste et tourner l'antenne",
+                "Double-click a spot: tune the radio and turn the antenna",
+                "Doble clic en un spot: sintonizar el equipo y girar la antena",
+                "Doppelklick auf einen Spot: Funkgerät abstimmen und Antenne drehen",
+                "Doppio clic su uno spot: sintonizza la radio e ruota l'antenna",
+                "Clique duplo num spot: sintonizar o rádio e girar a antena"),
+    "accorder": ("📻 Accorder", "📻 Tune", "📻 Sintonizar", "📻 Abstimmen", "📻 Sintonizza", "📻 Sintonizar"),
+    "tourner": ("🧭 Tourner", "🧭 Turn", "🧭 Girar", "🧭 Drehen", "🧭 Ruota", "🧭 Girar"),
+    "ok_poste": ("Poste sur {f} kHz {m}", "Radio on {f} kHz {m}", "Equipo en {f} kHz {m}",
+                 "Funkgerät auf {f} kHz {m}", "Radio su {f} kHz {m}", "Rádio em {f} kHz {m}"),
+    "ok_rotor": ("Antenne vers {a}°", "Antenna to {a}°", "Antena hacia {a}°", "Antenne auf {a}°",
+                 "Antenna verso {a}°", "Antena para {a}°"),
+    "err_poste": ("Poste injoignable ({h}) : le partage CAT de ton log est-il activé ?",
+                  "Radio unreachable ({h}): is CAT sharing enabled in your logger?",
+                  "Equipo inaccesible ({h}): ¿está activado el CAT compartido del log?",
+                  "Funkgerät nicht erreichbar ({h}): ist die CAT-Freigabe im Log aktiv?",
+                  "Radio non raggiungibile ({h}): la condivisione CAT del log è attiva?",
+                  "Rádio inacessível ({h}): o compartilhamento CAT do log está ativado?"),
+    "err_rotor": ("Rotor injoignable ({h})", "Rotator unreachable ({h})", "Rotor inaccesible ({h})",
+                  "Rotor nicht erreichbar ({h})", "Rotore non raggiungibile ({h})",
+                  "Rotor inacessível ({h})"),
     "a_propos": ("À propos", "About", "Acerca de", "Über", "Informazioni", "Sobre"),
     "version": ("Version {v}", "Version {v}", "Versión {v}", "Version {v}", "Versione {v}",
                 "Versão {v}"),
@@ -1819,6 +1856,67 @@ def lire_adif(chemin):
                 bande = None
         resultat.append((q["CALL"].upper(), bande))
     return resultat
+
+
+# ---------------------------------------------------------------- poste et rotor
+RIG_DEFAUT = "127.0.0.1:4532"          # Hamlib NET rigctl (OpsLog, Log4OM, rigctld…)
+ROTOR_PST_DEFAUT = "127.0.0.1:12000"   # PST Rotator, commande UDP
+MODES_RIGCTL = {"CW": "CW", "RTTY": "RTTY", "FM": "FM", "FT8": "PKTUSB", "FT4": "PKTUSB",
+                "PSK": "PKTUSB", "JT65": "PKTUSB", "SSTV": "USB"}
+
+
+def separer_adresse(adresse, port_defaut):
+    hote, _, port = adresse.strip().rpartition(":")
+    if not hote:
+        hote, port = adresse.strip(), ""
+    return hote or "127.0.0.1", int(port or port_defaut)
+
+
+def mode_rigctl(khz, mode):
+    if mode == "SSB":
+        return "LSB" if khz < 10000 and not 5250 <= khz <= 5450 else "USB"
+    return MODES_RIGCTL.get(mode)
+
+
+def envoyer_rig(adresse, khz, mode):
+    """Accorde le poste via le protocole Hamlib NET rigctl (F = fréquence, M = mode)."""
+    import socket
+    hote, port = separer_adresse(adresse, 4532)
+    with socket.create_connection((hote, port), timeout=3) as s:
+        s.settimeout(3)
+
+        def commande(c):
+            s.sendall((c + "\n").encode())
+            rep = b""
+            while b"RPRT" not in rep:
+                bloc = s.recv(256)
+                if not bloc:
+                    break
+                rep += bloc
+            m = re.search(rb"RPRT (-?\d+)", rep)
+            if m and int(m.group(1)) != 0:
+                raise OSError(f"rigctl {c!r} -> RPRT {m.group(1).decode()}")
+        commande(f"F {int(round(khz * 1000))}")
+        m = mode_rigctl(khz, mode)
+        if m:
+            commande(f"M {m} 0")
+    journal(f"poste accordé sur {khz:.1f} kHz {mode} via {adresse}")
+
+
+def envoyer_rotor(type_rotor, adresse, azimut):
+    """Oriente l'antenne : PST Rotator (UDP) ou contrôleur GS-232A (TCP)."""
+    import socket
+    az = int(round(azimut)) % 360
+    if type_rotor == "pst":
+        hote, port = separer_adresse(adresse, 12000)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(f"<PST><AZIMUTH>{az}</AZIMUTH></PST>".encode(), (hote, port))
+    else:
+        hote, port = separer_adresse(adresse, 4533)
+        with socket.create_connection((hote, port), timeout=3) as s:
+            s.sendall(f"M{az:03d}\r".encode())
+            time.sleep(0.2)
+    journal(f"rotor ({type_rotor}) vers {az}° via {adresse}")
 
 
 # ================================================================ interface
@@ -2965,6 +3063,7 @@ class App(tk.Tk):
         self._rendu_az = None
         self._minute_az = None
         self.cv_az.bind("<Motion>", self.survol_az)
+        self.cv_az.bind("<Double-Button-1>", self.double_clic_az)
         self.cv_az.bind("<Leave>", lambda e: (self.cv_az.delete("hl"),
                                                self.l_az.configure(text=T("azi_aide"))))
 
@@ -3005,11 +3104,19 @@ class App(tk.Tk):
                              font=F("mono", 9, "bold") if j == 2 else F("mono", 9))
                 l.grid(row=i + 1, column=j, sticky="w", pady=0)
                 l.bind("<Button-1>", lambda e, k=i: self.choisir_spot(k))
+                l.bind("<Double-Button-1>", lambda e, k=i: self.double_clic_spot(k))
                 ligne.append(l)
             self.lignes_spots.append(ligne)
         self.l_spot_detail = tk.Label(droite, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
                                       anchor="w", justify="left", wraplength=400)
         self.l_spot_detail.pack(fill="x", pady=(8, 0))
+        actions = tk.Frame(droite, bg=PANNEAU)
+        actions.pack(fill="x", pady=(6, 0))
+        self.b_accorder = self.bouton(actions, T("accorder"), lambda: self.agir_spot(poste=True))
+        self.b_tourner = self.bouton(actions, T("tourner"), lambda: self.agir_spot(rotor=True))
+        self.l_action = tk.Label(actions, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
+                                 anchor="w", wraplength=260, justify="left")
+        self._retours_action = []
         self.spots_affiches = []
         self.spot_choisi = None
 
@@ -3064,11 +3171,13 @@ class App(tk.Tk):
         if self._cty_pret == "erreur":
             self.l_spot_detail.configure(text=T("cty_indispo"), fg=ORANGE)
         self.afficher_detail_spot()
+        self.maj_boutons_action()
 
     def choisir_spot(self, k):
         if k < len(self.spots_affiches):
             s = self.spots_affiches[k]
             self.spot_choisi = None if s is self.spot_choisi else s
+            self.l_action.configure(text="")
             self.maj_liste_spots()
             self.dessiner_spots_az()
 
@@ -3086,6 +3195,76 @@ class App(tk.Tk):
                           + (f"  ·  {fmt_km(s['dist'])}  ·  az {s['az']:03.0f}°" if "dist" in s else ""))
         lignes.append(f"{s['comm']}  —  " + T("dx_par", s=s["spotter"]) + f"  ·  {s['t']:%H:%M} UTC")
         self.l_spot_detail.configure(text="\n".join(lignes), fg=TEXTE)
+
+    # ---- poste et rotor
+    def double_clic_spot(self, k):
+        if k < len(self.spots_affiches):
+            self.spot_choisi = self.spots_affiches[k]
+            self.maj_liste_spots()
+            self.dessiner_spots_az()
+            if self.cfg.get("dblclic", True):
+                self.agir_spot(poste=True, rotor=True)
+
+    def double_clic_az(self, e):
+        if not self.qth:
+            return
+        for s in self.spots_visibles():
+            if "lat" in s:
+                x, y = self.az_xy(s["lat"], s["lon"])
+                if abs(x - e.x) <= 7 and abs(y - e.y) <= 7:
+                    self.spot_choisi = s
+                    self.maj_liste_spots()
+                    self.dessiner_spots_az()
+                    if self.cfg.get("dblclic", True):
+                        self.agir_spot(poste=True, rotor=True)
+                    return
+
+    def agir_spot(self, poste=False, rotor=False):
+        s = self.spot_choisi
+        if s is None:
+            return
+        rig = self.cfg.get("rig") or RIG_DEFAUT
+        type_rotor = self.cfg.get("rotor_type", "pst")
+        adr_rotor = self.cfg.get("rotor_" + type_rotor) or (ROTOR_PST_DEFAUT if type_rotor == "pst" else "")
+        actions = []
+        if poste and self.cfg.get("rig_actif", True):
+            actions.append("poste")
+        if rotor and type_rotor != "aucun" and adr_rotor and "az" in s:
+            actions.append("rotor")
+
+        def travail():
+            for a in actions:
+                try:
+                    if a == "poste":
+                        envoyer_rig(rig, s["khz"], s["mode"])
+                        self._retours_action.append(
+                            (T("ok_poste", f=f"{s['khz']:.1f}", m=mode_rigctl(s["khz"], s["mode"]) or ""), VERT))
+                    else:
+                        envoyer_rotor(type_rotor, adr_rotor, s["az"])
+                        self._retours_action.append((T("ok_rotor", a=f"{s['az']:.0f}"), VERT))
+                except Exception as ex:
+                    journal(f"{a} : ERREUR {ex!r}")
+                    self._retours_action.append(
+                        (T("err_poste", h=rig) if a == "poste" else T("err_rotor", h=adr_rotor), ORANGE))
+        if actions:
+            threading.Thread(target=travail, daemon=True).start()
+
+    def maj_boutons_action(self):
+        if self.spot_choisi is not None and self.spot_choisi in self.spots:
+            if not self.b_accorder.winfo_ismapped():
+                if self.cfg.get("rig_actif", True):
+                    self.b_accorder.pack(side="left")
+                if self.cfg.get("rotor_type", "pst") != "aucun":
+                    self.b_tourner.pack(side="left", padx=(6, 0))
+                self.l_action.pack(side="left", padx=(10, 0))
+        else:
+            for w in (self.b_accorder, self.b_tourner, self.l_action):
+                w.pack_forget()
+        if self._retours_action:
+            retours, self._retours_action = self._retours_action, []
+            erreur = any(c != VERT for _, c in retours)
+            self.l_action.configure(text="  ·  ".join(t for t, _ in retours),
+                                    fg=ORANGE if erreur else VERT)
 
     # ---- carte azimutale
     def az_xy(self, lat, lon):
@@ -3826,13 +4005,57 @@ class App(tk.Tk):
         e_clu.insert(0, self.cfg.get("cluster") or CLUSTER_DEFAUT)
         e_clu.grid(row=3, column=1, sticky="w", pady=4, ipady=3)
 
+        # poste
+        etiquette(T("poste"), 4)
+        ligne_r = tk.Frame(d, bg=FOND)
+        ligne_r.grid(row=4, column=1, sticky="w", pady=(10, 0))
+        e_rig = style_entree(tk.Entry(ligne_r, width=18))
+        e_rig.insert(0, self.cfg.get("rig") or RIG_DEFAUT)
+        e_rig.pack(side="left", ipady=3)
+        v_rig = tk.BooleanVar(value=self.cfg.get("rig_actif", True))
+        Bascule(ligne_r, "", v_rig).pack(side="left", padx=(10, 0))
+        tk.Label(d, text=T("rig_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
+            row=5, column=1, sticky="w")
+        # rotor
+        etiquette(T("rotor"), 6)
+        ligne_o = tk.Frame(d, bg=FOND)
+        ligne_o.grid(row=6, column=1, sticky="w", pady=(10, 0))
+        choix_rotor = {"type": self.cfg.get("rotor_type", "pst")}
+        adresses = {"pst": self.cfg.get("rotor_pst") or ROTOR_PST_DEFAUT,
+                    "gs232": self.cfg.get("rotor_gs232", "")}
+        e_rot = style_entree(tk.Entry(ligne_o, width=18))
+
+        def choisir_rotor(t):
+            if choix_rotor.get("pret") and choix_rotor["type"] in adresses:
+                adresses[choix_rotor["type"]] = e_rot.get().strip()
+            choix_rotor["pret"] = True
+            choix_rotor["type"] = t
+            seg_rot.choisir(t)
+            e_rot.delete(0, "end")
+            if t in adresses:
+                e_rot.configure(state="normal")
+                e_rot.insert(0, adresses[t])
+            else:
+                e_rot.configure(state="disabled")
+        seg_rot = Segments(ligne_o, [("pst", "PST Rotator"), ("gs232", "GS-232A"),
+                                     ("aucun", T("aucun"))], choisir_rotor)
+        for lab in seg_rot.items.values():
+            lab.configure(padx=8, font=F("txt", 8))
+        seg_rot.pack(side="left")
+        e_rot.pack(side="left", padx=(10, 0), ipady=3)
+        choisir_rotor(choix_rotor["type"])
+        tk.Label(d, text=T("rotor_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
+            row=7, column=1, sticky="w")
+        v_dbl = tk.BooleanVar(value=self.cfg.get("dblclic", True))
+        Bascule(d, T("dblclic"), v_dbl).grid(row=8, column=0, columnspan=2, sticky="w", pady=(10, 0))
+
         v_dem = tk.BooleanVar(value=demarrage_actif())
         cb = Bascule(d, T("demarrage"), v_dem)
-        cb.grid(row=4, column=0, columnspan=2, sticky="w", pady=(14, 0))
+        cb.grid(row=9, column=0, columnspan=2, sticky="w", pady=(14, 0))
         if os.name != "nt":
             cb.lb.configure(text=T("demarrage") + " " + T("windows_seul"))
         tk.Label(d, text=T("rouvre"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
-            row=5, column=0, columnspan=2, sticky="w", pady=(4, 0))
+            row=10, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
         def valider():
             loc = e_loc.get().strip().upper()
@@ -3846,6 +4069,16 @@ class App(tk.Tk):
             if ":" not in serveur:
                 serveur += ":23"
             self.cfg["cluster"] = serveur
+            self.cfg["rig"] = e_rig.get().strip() or RIG_DEFAUT
+            self.cfg["rig_actif"] = v_rig.get()
+            if choix_rotor["type"] in adresses:
+                adresses[choix_rotor["type"]] = e_rot.get().strip()
+            self.cfg["rotor_type"] = choix_rotor["type"]
+            self.cfg["rotor_pst"] = adresses["pst"] or ROTOR_PST_DEFAUT
+            self.cfg["rotor_gs232"] = adresses["gs232"]
+            self.cfg["dblclic"] = v_dbl.get()
+            for w in (self.b_accorder, self.b_tourner, self.l_action):
+                w.pack_forget()
             self.maj_qth()
             for sp in self.spots:
                 sp.pop("dist", None)
@@ -3876,7 +4109,7 @@ class App(tk.Tk):
                 self.maj_liste_spots()
 
         self.bouton(d, T("enregistrer"), valider, primaire=True).grid(
-            row=6, column=1, sticky="e", pady=(16, 0))
+            row=11, column=1, sticky="e", pady=(16, 0))
         d.bind("<Return>", lambda e: valider())
         e_ind.focus_set()
 
@@ -3921,6 +4154,8 @@ class App(tk.Tk):
             self.maj_lune()
             if now.minute % 10 == 0 and now.second < 2:
                 self.dessiner_courbes_eme()
+        if self._retours_action and self.vue == "dx":
+            self.maj_boutons_action()
         nouveaux = self.cluster.prendre() if self.cluster else []
         if nouveaux:
             self.integrer_spots(nouveaux)
