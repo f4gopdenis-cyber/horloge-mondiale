@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.0"
+VERSION = "2.1"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -733,8 +733,8 @@ TEXTES = {
                  "Warte auf Spots…", "In attesa degli spot…", "Aguardando spots…"),
     "dx_par": ("spot de {s}", "spotted by {s}", "spot de {s}", "gespottet von {s}",
                "spot di {s}", "spot de {s}"),
-    "cluster": ("DX cluster (hôte:port)", "DX cluster (host:port)", "Clúster DX (host:puerto)",
-                "DX-Cluster (Host:Port)", "Cluster DX (host:porta)", "Cluster DX (host:porta)"),
+    "cluster": ("DX clusters (hôte:port, …)", "DX clusters (host:port, …)", "Clústeres DX (host:puerto, …)",
+                "DX-Cluster (Host:Port, …)", "Cluster DX (host:porta, …)", "Clusters DX (host:porta, …)"),
     "azi_aide": ("Carte azimutale centrée sur ton QTH : direction et distance réelles",
                  "Azimuthal map centred on your QTH: true bearing and distance",
                  "Mapa azimutal centrado en tu QTH: rumbo y distancia reales",
@@ -1461,7 +1461,17 @@ CLUSTER_DEFAUT = "ea4rch.dxfun.com:8000"
 # nœuds testés en service par F4GOP, essayés dans l'ordre si le précédent ne répond pas
 CLUSTERS_SECOURS = ["ea4rch.dxfun.com:8000", "f5mzn.org:9000", "n8dxe.dxengineering.com:7373",
                     "hrd.wa9pie.net:8000", "ve7cc.net:23", "dxcluster.f5len.org:7373"]
-ANCIENS_CLUSTERS = ("dxc.ve7cc.net:23", "dxcluster.f5len.org:7373")  # anciens défauts -> nouveau
+ANCIENS_CLUSTERS = ("dxc.ve7cc.net:23", "dxcluster.f5len.org:7373", "ea4rch.dxfun.com:8000")
+
+
+def liste_clusters(texte):
+    """« a:23, b:8000 » -> ['a:23', 'b:8000'] (port 23 par défaut)."""
+    out = []
+    for x in re.split(r"[,;\s]+", texte or ""):
+        x = x.strip()
+        if x:
+            out.append(x if ":" in x else x + ":23")
+    return out
 CTY_URLS = ["https://www.country-files.com/cty/cty.dat",
             "http://www.country-files.com/cty/cty.dat"]
 CTY_CACHE = os.path.join(os.path.expanduser("~"), "horloge_mondiale_cty.dat")
@@ -1727,9 +1737,10 @@ class ClientCluster(threading.Thread):
     """Connexion telnet au DX cluster, reconnexion automatique, spots dans une file."""
 
     def __init__(self, indicatif, serveur):
+        """serveur : « hôte:port » ou liste de serveurs essayés à tour de rôle."""
         super().__init__(daemon=True)
         self.indicatif = indicatif
-        self.serveurs = [serveur] + [s for s in CLUSTERS_SECOURS if s != serveur]
+        self.serveurs = [serveur] if isinstance(serveur, str) else list(serveur)
         self.file = []
         self.verrou = threading.Lock()
         self.etat = ("connexion", self.serveurs[0])
@@ -2403,7 +2414,7 @@ class App(tk.Tk):
         self.charger_dxcc_faits()
         self.cty = TablePrefixes()
         self._cty_pret = None
-        self.cluster = None
+        self.clusters = []
         self.construire_entete()
         self.construire_barre()
         self.page_villes = tk.Frame(self, bg=FOND)
@@ -2473,8 +2484,8 @@ class App(tk.Tk):
 
     def quitter(self):
         self.sauver()
-        if self.cluster:
-            self.cluster.stop()
+        for c in self.clusters:
+            c.stop()
         try:  # annuler les minuteries en attente (utile lors d'une relance)
             for ident in self.tk.splitlist(self.tk.call("after", "info")):
                 self.tk.call("after", "cancel", ident)
@@ -3173,16 +3184,24 @@ class App(tk.Tk):
 
     # ------------------------------------------------------------ réglages
     # ------------------------------------------------------------ spots DX
+    def serveurs_cluster(self):
+        """Clusters auxquels se connecter simultanément (ancien réglage unique migré)."""
+        if "clusters" not in self.cfg:
+            ancien = self.cfg.get("cluster")
+            self.cfg["clusters"] = (list(CLUSTERS_SECOURS[:5]) if not ancien or ancien in ANCIENS_CLUSTERS
+                                    else [ancien])
+        return self.cfg["clusters"] or list(CLUSTERS_SECOURS[:5])
+
     def demarrer_cluster(self):
-        if self.cluster:
-            self.cluster.stop()
-            self.cluster = None
+        for c in self.clusters:
+            c.stop()
+        self.clusters = []
         indicatif = (self.cfg.get("indicatif") or "").strip()
         if indicatif:
-            if self.cfg.get("cluster") in ANCIENS_CLUSTERS:
-                self.cfg["cluster"] = CLUSTER_DEFAUT
-            self.cluster = ClientCluster(indicatif, self.cfg.get("cluster") or CLUSTER_DEFAUT)
-            self.cluster.start()
+            for serveur in self.serveurs_cluster():
+                c = ClientCluster(indicatif, serveur)
+                c.start()
+                self.clusters.append(c)
 
     def charger_table_cty(self):
         def travail():
@@ -3506,14 +3525,18 @@ class App(tk.Tk):
     def etat_cluster_txt(self):
         if not (self.cfg.get("indicatif") or "").strip():
             return T("dx_indicatif"), ORANGE
-        if not self.cluster:
+        if not self.clusters:
             return "", TEXTE_DIM
-        etat, serveur = self.cluster.etat
-        if etat == "connecte":
-            return f"● {serveur}  ·  {len(self.spots)} spots", VERT
-        if etat == "erreur":
-            return T("dx_erreur", h=serveur), ORANGE
-        return T("dx_connexion", h=serveur), TEXTE_DIM
+        etats = [c.etat for c in self.clusters]
+        ok = [srv for e, srv in etats if e == "connecte"]
+        n = len(self.clusters)
+        if ok:
+            nom = ok[0].split(":")[0] if n == 1 else f"{len(ok)}/{n} clusters"
+            return f"● {nom}  ·  {len(self.spots)} spots", VERT if len(ok) == n else ORANGE
+        etat, serveur = etats[0]
+        if all(e == "erreur" for e, _ in etats):
+            return T("dx_erreur", h=serveur if n == 1 else f"{n} clusters"), ORANGE
+        return T("dx_connexion", h=serveur if n == 1 else f"{n} clusters"), TEXTE_DIM
 
     def maj_liste_spots(self):
         txt, coul = self.etat_cluster_txt()
@@ -4373,8 +4396,8 @@ class App(tk.Tk):
         e_loc.grid(row=2, column=1, sticky="w", pady=4, ipady=3)
 
         etiquette(T("cluster"), 3)
-        e_clu = style_entree(tk.Entry(d, width=24))
-        e_clu.insert(0, self.cfg.get("cluster") or CLUSTER_DEFAUT)
+        e_clu = style_entree(tk.Entry(d, width=52))
+        e_clu.insert(0, ", ".join(self.serveurs_cluster()))
         e_clu.grid(row=3, column=1, sticky="w", pady=4, ipady=3)
 
         # poste
@@ -4434,13 +4457,10 @@ class App(tk.Tk):
             if loc and not LOCATOR_RE.match(loc):
                 messagebox.showerror("Locator", T("locator_invalide"), parent=d)
                 return
-            ancien = (self.cfg.get("indicatif"), self.cfg.get("cluster"))
+            ancien = (self.cfg.get("indicatif"), list(self.serveurs_cluster()))
             self.cfg["indicatif"] = e_ind.get().strip().upper()
             self.cfg["locator"] = loc
-            serveur = e_clu.get().strip() or CLUSTER_DEFAUT
-            if ":" not in serveur:
-                serveur += ":23"
-            self.cfg["cluster"] = serveur
+            self.cfg["clusters"] = liste_clusters(e_clu.get()) or list(CLUSTERS_SECOURS[:5])
             self.cfg["rig"] = e_rig.get().strip() or RIG_DEFAUT
             self.cfg["rig_actif"] = v_rig.get()
             if choix_rotor["type"] in adresses:
@@ -4461,7 +4481,7 @@ class App(tk.Tk):
                     regler_demarrage(v_dem.get())
                 except Exception as ex:
                     messagebox.showerror(T("demarrage"), T("demarrage_err", e=ex), parent=d)
-            if ancien != (self.cfg.get("indicatif"), self.cfg.get("cluster")):
+            if ancien != (self.cfg.get("indicatif"), self.cfg["clusters"]):
                 self.spots = []
                 self.demarrer_cluster()
             nouvelle = (choix["langue"] != self.cfg.get("langue")
@@ -4544,7 +4564,7 @@ class App(tk.Tk):
                 self.dessiner_courbes_eme()
         if self._retours_action and self.vue == "dx":
             self.maj_boutons_action()
-        nouveaux = self.cluster.prendre() if self.cluster else []
+        nouveaux = [sp for c in self.clusters for sp in c.prendre()]
         if nouveaux:
             self.integrer_spots(nouveaux)
         t = time.time()

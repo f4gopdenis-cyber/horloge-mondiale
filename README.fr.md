@@ -97,7 +97,7 @@ Double-cliquer sur `construire_exe.bat` (installe PyInstaller et produit
 La fenêtre **⚙ Réglages** s'ouvre automatiquement : choisir la langue, puis indiquer
 son **indicatif** et son **locator**. Ils servent au panneau QTH, aux distances/azimuts,
 à la carte azimutale, au choix de l'ionosonde la plus proche et à la connexion au DX cluster.
-Le serveur du cluster se change dans les réglages (par défaut `ea4rch.dxfun.com:8000`, avec bascule automatique sur F5MZN, N8DXE, WA9PIE et VE7CC).
+Le serveur du cluster se change dans les réglages (par défaut, connexion **simultanée** à EA4RCH, F5MZN, N8DXE, WA9PIE et VE7CC pour des spots plus rapides ; les doublons sont fusionnés).
 
 Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier utilisateur.
 

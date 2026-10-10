@@ -87,7 +87,7 @@ Renaming the file to `horloge_mondiale.pyw` avoids the console window.
 The **⚙ Settings** window opens automatically: choose your language and enter your
 **callsign** and **locator**. They are used for the QTH panel, distances/bearings, the
 azimuthal map, the nearest ionosonde and the DX cluster login. The DX cluster server can be
-changed in the settings (default `ea4rch.dxfun.com:8000`, with automatic fallback to F5MZN, N8DXE, WA9PIE and VE7CC).
+changed in the settings (by default it connects to EA4RCH, F5MZN, N8DXE, WA9PIE and VE7CC **simultaneously** for the fastest spots; duplicates are merged).
 
 Settings are saved in `horloge_mondiale.json`, in your user folder.
 
