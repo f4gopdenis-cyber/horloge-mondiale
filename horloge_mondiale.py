@@ -26,6 +26,7 @@ import re
 import sys
 import threading
 import time
+import webbrowser
 import urllib.request
 import xml.etree.ElementTree as ET
 import zlib
@@ -40,6 +41,10 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
+VERSION = "1.2"
+AUTEUR = "Denis F4GOP"
+URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
+URL_QRZ = "https://www.qrz.com/db/F4GOP"
 CONFIG = os.path.join(os.path.expanduser("~"), "horloge_mondiale.json")
 GELE = getattr(sys, "frozen", False)  # True dans l'exécutable PyInstaller
 
@@ -698,6 +703,28 @@ TEXTES = {
                "Die Uhr öffnet in der zuletzt genutzten Ansicht (z. B. Kompakt).",
                "L'orologio si riapre nell'ultima vista usata (es. Compatto).",
                "O relógio reabre na última visualização usada (ex. Compacto)."),
+    "a_propos": ("À propos", "About", "Acerca de", "Über", "Informazioni", "Sobre"),
+    "version": ("Version {v}", "Version {v}", "Versión {v}", "Version {v}", "Versione {v}",
+                "Versão {v}"),
+    "realise_par": ("Réalisé par", "Created by", "Creado por", "Entwickelt von", "Realizzato da",
+                    "Criado por"),
+    "description": ("Horloge mondiale, grayline et propagation HF pour radioamateurs.",
+                    "World clock, greyline and HF propagation for radio amateurs.",
+                    "Reloj mundial, línea gris y propagación HF para radioaficionados.",
+                    "Weltuhr, Greyline und KW-Ausbreitung für Funkamateure.",
+                    "Orologio mondiale, greyline e propagazione HF per radioamatori.",
+                    "Relógio mundial, greyline e propagação HF para radioamadores."),
+    "projet_github": ("Projet, mises à jour et code source", "Project, updates and source code",
+                      "Proyecto, actualizaciones y código fuente",
+                      "Projekt, Updates und Quellcode", "Progetto, aggiornamenti e codice sorgente",
+                      "Projeto, atualizações e código-fonte"),
+    "page_qrz": ("Page QRZ.com", "QRZ.com page", "Página QRZ.com", "QRZ.com-Seite",
+                 "Pagina QRZ.com", "Página QRZ.com"),
+    "donnees": ("Données", "Data", "Datos", "Daten", "Dati", "Dados"),
+    "licence": ("Logiciel libre et gratuit — licence MIT", "Free and open-source software — MIT license",
+                "Software libre y gratuito — licencia MIT", "Freie, kostenlose Software — MIT-Lizenz",
+                "Software libero e gratuito — licenza MIT", "Software livre e gratuito — licença MIT"),
+    "fermer": ("Fermer", "Close", "Cerrar", "Schließen", "Chiudi", "Fechar"),
     "enregistrer": ("Enregistrer", "Save", "Guardar", "Speichern", "Salva", "Salvar"),
     "locator_invalide": ("Locator invalide (ex. IN98QR).", "Invalid locator (e.g. IN98QR).",
                          "Locator no válido (p. ej. IN98QR).", "Ungültiger Locator (z. B. IN98QR).",
@@ -1638,6 +1665,7 @@ class App(tk.Tk):
         Bascule(barre, T("secondes"), self.secondes, self.basculer_secondes).pack(side="left")
         Bascule(barre, T("premier_plan"), self.premier_plan,
                 self.basculer_premier_plan).pack(side="left", padx=(18, 0))
+        self.bouton(barre, "ⓘ", self.dialogue_a_propos).pack(side="right", padx=(6, 0))
         self.bouton(barre, "⚙  " + T("reglages"), self.dialogue_reglages).pack(side="right")
         self.segments = Segments(barre, (("villes", T("vue_pays")), ("carte", T("vue_carte")),
                                          ("compact", T("vue_compact"))), self.afficher_vue)
@@ -2217,6 +2245,60 @@ class App(tk.Tk):
         self.afficher_vue(getattr(self, "vue_avant_compact", "villes"))
 
     # ------------------------------------------------------------ réglages
+    def dialogue_a_propos(self):
+        d = tk.Toplevel(self)
+        d.title(T("a_propos"))
+        d.configure(bg=FOND, padx=26, pady=20)
+        d.transient(self)
+        d.resizable(False, False)
+        barre_titre_sombre(d)
+        d.grab_set()
+
+        haut = tk.Frame(d, bg=FOND)
+        haut.pack(fill="x")
+        try:
+            self._icone_grande = tk.PhotoImage(data=ICONE_PNG)
+            tk.Label(haut, image=self._icone_grande, bg=FOND).pack(side="left", padx=(0, 16))
+        except tk.TclError:
+            pass
+        titre = tk.Frame(haut, bg=FOND)
+        titre.pack(side="left")
+        tk.Label(titre, text=T("app"), font=F("titre", 18, "bold"), fg=TEXTE,
+                 bg=FOND).pack(anchor="w")
+        tk.Label(titre, text=T("version", v=VERSION), font=F("txt", 9), fg=TEXTE_DIM,
+                 bg=FOND).pack(anchor="w")
+
+        tk.Label(d, text=T("description"), font=F("txt", 10), fg=TEXTE, bg=FOND,
+                 justify="left").pack(anchor="w", pady=(14, 10))
+
+        cadre, f = self.panneau(d, QTH_COUL)
+        cadre.pack(fill="x")
+        tk.Label(f, text=T("realise_par").upper(), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(anchor="w")
+        tk.Label(f, text=AUTEUR, font=F("titre", 15, "bold"), fg=QTH_COUL,
+                 bg=PANNEAU).pack(anchor="w", pady=(2, 6))
+
+        def lien(parent, texte, url):
+            l = tk.Label(parent, text=texte, font=F("txt", 10, "underline"), fg=UTC_COUL,
+                         bg=parent.cget("bg"), cursor="hand2")
+            l.bind("<Button-1>", lambda e: webbrowser.open(url))
+            l.bind("<Enter>", lambda e: l.configure(fg="#8fd8ff"))
+            l.bind("<Leave>", lambda e: l.configure(fg=UTC_COUL))
+            return l
+        lien(f, "↗  " + T("projet_github"), URL_GITHUB).pack(anchor="w")
+        lien(f, "↗  " + T("page_qrz") + " — F4GOP", URL_QRZ).pack(anchor="w", pady=(2, 0))
+
+        tk.Label(d, text=T("donnees") + " : N0NBH (hamqsl.com) · KC2G / GIRO · NOAA SWPC · Unicode CLDR",
+                 font=F("txt", 8), fg=TEXTE_DIM, bg=FOND).pack(anchor="w", pady=(14, 0))
+        tk.Label(d, text=T("licence"), font=F("txt", 8), fg=TEXTE_DIM,
+                 bg=FOND).pack(anchor="w", pady=(2, 0))
+        tk.Label(d, text="73 !", font=F("titre", 10, "bold"), fg=ACCENT,
+                 bg=FOND).pack(anchor="w", pady=(8, 0))
+
+        self.bouton(d, T("fermer"), d.destroy, primaire=True).pack(anchor="e", pady=(10, 0))
+        d.bind("<Escape>", lambda e: d.destroy())
+        d.bind("<Return>", lambda e: d.destroy())
+
     def dialogue_reglages(self):
         d = tk.Toplevel(self)
         d.title(T("reglages"))
