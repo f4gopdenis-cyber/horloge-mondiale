@@ -75,7 +75,7 @@ Double-cliquer sur `construire_exe.bat` (installe PyInstaller et produit
 La fenêtre **⚙ Réglages** s'ouvre automatiquement : choisir la langue, puis indiquer
 son **indicatif** et son **locator**. Ils servent au panneau QTH, aux distances/azimuts,
 à la carte azimutale, au choix de l'ionosonde la plus proche et à la connexion au DX cluster.
-Le serveur du cluster se change dans les réglages (par défaut `dxc.ve7cc.net:23`).
+Le serveur du cluster se change dans les réglages (par défaut `ea4rch.dxfun.com:8000`, avec bascule automatique sur F5MZN, N8DXE, WA9PIE et VE7CC).
 
 Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier utilisateur.
 
@@ -85,7 +85,7 @@ Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier ut
 - MUF et ionosondes : [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (données GIRO)
 - Ovale auroral : [NOAA SWPC — modèle OVATION](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
 - Préfixes DXCC : [fichiers pays d'AD1C — cty.dat](https://www.country-files.com/)
-- Spots DX : réseau DX cluster (nœud par défaut VE7CC)
+- Spots DX : réseau DX cluster (nœuds EA4RCH, F5MZN, N8DXE, WA9PIE, VE7CC)
 - Contours des terres : paquet Python `global-land-mask` (données NOAA GLOBE)
 - Noms des pays, jours et mois : Unicode CLDR
 

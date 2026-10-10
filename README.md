@@ -66,7 +66,7 @@ Renaming the file to `horloge_mondiale.pyw` avoids the console window.
 The **⚙ Settings** window opens automatically: choose your language and enter your
 **callsign** and **locator**. They are used for the QTH panel, distances/bearings, the
 azimuthal map, the nearest ionosonde and the DX cluster login. The DX cluster server can be
-changed in the settings (default `dxc.ve7cc.net:23`).
+changed in the settings (default `ea4rch.dxfun.com:8000`, with automatic fallback to F5MZN, N8DXE, WA9PIE and VE7CC).
 
 Settings are saved in `horloge_mondiale.json`, in your user folder.
 
@@ -76,7 +76,7 @@ Settings are saved in `horloge_mondiale.json`, in your user folder.
 - MUF and ionosondes: [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (GIRO data)
 - Auroral oval: [NOAA SWPC — OVATION model](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
 - DXCC prefixes: [AD1C country files — cty.dat](https://www.country-files.com/)
-- DX spots: DX cluster network (default node VE7CC)
+- DX spots: DX cluster network (EA4RCH, F5MZN, N8DXE, WA9PIE, VE7CC nodes)
 - Land outlines: `global-land-mask` Python package (NOAA GLOBE data)
 - Country, day and month names: Unicode CLDR
 

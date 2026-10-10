@@ -1281,8 +1281,11 @@ def regler_demarrage(actif):
 
 
 # ---------------------------------------------------------------- DX cluster
-CLUSTER_DEFAUT = "dxc.ve7cc.net:23"
-CLUSTERS_SECOURS = ["dxc.ve7cc.net:23", "dxc.hamserve.uk:7300", "dxfun.com:8000"]
+CLUSTER_DEFAUT = "ea4rch.dxfun.com:8000"
+# nœuds testés en service par F4GOP, essayés dans l'ordre si le précédent ne répond pas
+CLUSTERS_SECOURS = ["ea4rch.dxfun.com:8000", "f5mzn.org:9000", "n8dxe.dxengineering.com:7373",
+                    "hrd.wa9pie.net:8000", "ve7cc.net:23", "dxcluster.f5len.org:7373"]
+ANCIENS_CLUSTERS = ("dxc.ve7cc.net:23", "dxcluster.f5len.org:7373")  # anciens défauts -> nouveau
 CTY_URLS = ["https://www.country-files.com/cty/cty.dat",
             "http://www.country-files.com/cty/cty.dat"]
 CTY_CACHE = os.path.join(os.path.expanduser("~"), "horloge_mondiale_cty.dat")
@@ -1420,16 +1423,30 @@ def charger_cty(table):
         return False
 
 
-RE_SPOT = re.compile(r"^DX de\s+([A-Z0-9/#\-]+):?\s+(\d+(?:\.\d+)?)\s+([A-Z0-9/]+)\s+(.*?)\s*(\d{4})Z",
+JOURNAL_CLUSTER = os.path.join(os.path.expanduser("~"), "horloge_mondiale_cluster.log")
+
+
+def journal(message):
+    """Journal de diagnostic du DX cluster (fichier texte dans le dossier utilisateur)."""
+    try:
+        if os.path.exists(JOURNAL_CLUSTER) and os.path.getsize(JOURNAL_CLUSTER) > 200_000:
+            os.replace(JOURNAL_CLUSTER, JOURNAL_CLUSTER + ".old")
+        with open(JOURNAL_CLUSTER, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}Z  {message}\n")
+    except OSError:
+        pass
+
+
+RE_SPOT = re.compile(r"DX de\s+([^\s:]+):?\s+(\d+(?:\.\d+)?)\s+([A-Z0-9/]+)\s+(.*?)\s*(\d{4})Z",
                      re.I)
 RE_SHDX = re.compile(r"^\s*(\d+(?:\.\d+)?)\s+([A-Z0-9/]+)\s+\d{1,2}-[A-Za-z]{3}-\d{4}\s+(\d{4})Z\s+"
-                     r"(.*?)\s*<([A-Z0-9/#\-]+)>", re.I)
+                     r"(.*?)\s*<([^\s>]+)>", re.I)
 RE_TELNET = re.compile(rb"\xff[\xfb-\xfe].|\xff[\xf0-\xfa]", re.S)
 
 
 def lire_ligne_spot(ligne):
     """Analyse une ligne de cluster -> (spotter, kHz, indicatif, commentaire, HHMM) ou None."""
-    m = RE_SPOT.match(ligne)
+    m = RE_SPOT.search(ligne)
     if m:
         return m.group(1), float(m.group(2)), m.group(3).upper(), m.group(4).strip(), m.group(5)
     m = RE_SHDX.match(ligne)
@@ -1450,6 +1467,7 @@ class ClientCluster(threading.Thread):
         self.etat = ("connexion", self.serveurs[0])
         self.arret = threading.Event()
         self.sock = None
+        self.nb_lignes = 0
 
     def stop(self):
         self.arret.set()
@@ -1466,12 +1484,15 @@ class ClientCluster(threading.Thread):
             serveur = self.serveurs[i % len(self.serveurs)]
             hote, _, port = serveur.partition(":")
             self.etat = ("connexion", serveur)
+            journal(f"connexion à {serveur}…")
             try:
                 self.sock = socket.create_connection((hote, int(port or 23)), timeout=20)
-                self.sock.settimeout(300)
+                self.sock.settimeout(4)
+                journal(f"connecté à {serveur}")
                 self.dialoguer(serveur)
-            except Exception:
-                pass
+                journal(f"{serveur} : connexion fermée par le serveur")
+            except Exception as ex:
+                journal(f"{serveur} : ERREUR {ex!r}")
             finally:
                 try:
                     self.sock.close()
@@ -1483,29 +1504,47 @@ class ClientCluster(threading.Thread):
             i += 1
             self.arret.wait(30)
 
+    def connexion(self, serveur):
+        """Envoie l'indicatif, puis demande les derniers spots."""
+        journal(f"envoi de l'indicatif {self.indicatif}")
+        self.sock.sendall(self.indicatif.encode() + b"\r\n")
+        time.sleep(1.5)
+        self.sock.sendall(b"sh/dx 30\r\n")
+        self.sock.settimeout(300)
+        self.etat = ("connecte", serveur)
+
     def dialoguer(self, serveur):
+        import socket
         tampon = b""
         connecte = False
-        debut = time.time()
         while not self.arret.is_set():
             try:
                 bloc = self.sock.recv(4096)
+            except socket.timeout:
+                if connecte:
+                    return  # plus rien depuis 5 min : on se reconnecte
+                # serveur silencieux : il attend l'indicatif sans invite
+                journal("pas d'invite au bout de 4 s")
+                self.connexion(serveur)
+                connecte = True
+                continue
             except OSError:
                 return
             if not bloc:
                 return
             tampon = RE_TELNET.sub(b"", tampon + bloc)
-            texte_brut = tampon.decode("latin-1", "replace").lower()
-            if not connecte and ("login" in texte_brut or "call" in texte_brut
-                                 or time.time() - debut > 4):
-                self.sock.sendall(self.indicatif.encode() + b"\r\n")
-                time.sleep(1.5)
-                self.sock.sendall(b"sh/dx 30\r\n")
-                connecte = True
-                self.etat = ("connecte", serveur)
+            if not connecte:
+                invite = tampon.decode("latin-1", "replace").lower()
+                if "login" in invite or "call" in invite or "indicatif" in invite:
+                    self.connexion(serveur)
+                    connecte = True
             *lignes, tampon = tampon.split(b"\n")
             for l in lignes:
-                spot = lire_ligne_spot(l.decode("latin-1", "replace").strip("\r "))
+                self.nb_lignes += 1
+                texte = l.decode("latin-1", "replace").strip("\r ")
+                spot = lire_ligne_spot(texte)
+                if self.nb_lignes <= 80 or (spot is None and self.nb_lignes <= 300):
+                    journal(("SPOT  " if spot else "reçu  ") + texte[:120])
                 if spot:
                     with self.verrou:
                         self.file.append(spot)
@@ -2561,6 +2600,8 @@ class App(tk.Tk):
             self.cluster = None
         indicatif = (self.cfg.get("indicatif") or "").strip()
         if indicatif:
+            if self.cfg.get("cluster") in ANCIENS_CLUSTERS:
+                self.cfg["cluster"] = CLUSTER_DEFAUT
             self.cluster = ClientCluster(indicatif, self.cfg.get("cluster") or CLUSTER_DEFAUT)
             self.cluster.start()
 
@@ -2690,7 +2731,7 @@ class App(tk.Tk):
             return "", TEXTE_DIM
         etat, serveur = self.cluster.etat
         if etat == "connecte":
-            return "● " + T("dx_connecte", h=serveur), VERT
+            return f"● {serveur}  ·  {len(self.spots)} spots", VERT
         if etat == "erreur":
             return T("dx_erreur", h=serveur), ORANGE
         return T("dx_connexion", h=serveur), TEXTE_DIM
@@ -3137,7 +3178,11 @@ class App(tk.Tk):
             self.integrer_donnees(res)
         if time.time() - self._prop_derniere > PERIODE_DONNEES:
             self.lancer_maj_donnees()
-        self.tick_dx(now)
+        try:
+            self.tick_dx(now)
+        except Exception:
+            import traceback
+            journal("ERREUR interface : " + traceback.format_exc().replace("\n", " | "))
         if now.second != self._derniere_seconde:
             self._derniere_seconde = now.second
             sol = soleil(now)
