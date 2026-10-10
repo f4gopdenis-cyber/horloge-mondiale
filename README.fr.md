@@ -24,10 +24,17 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
   - **indices** SFI, SSN, A, K, rayons X, vent solaire, Bz, géomagnétisme, bruit ;
   - **bandes HF** jour/nuit et conditions **VHF** (Es, aurore) ;
   - MUF de l'ionosonde la plus proche du QTH.
+- **DX cluster** (nouveau en 1.3) : spots DX en direct reçus par telnet (connexion avec ton
+  indicatif), affichés sur les cartes et dans une liste avec fréquence, pays, distance et azimut ;
+  filtre par bande.
+- **Carte azimutale centrée sur le QTH** (nouveau en 1.3) : direction et distance réelles de chaque
+  spot et pays, cercles de distance, grayline. Un clic sur un spot trace son trajet grand cercle.
 - **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
 - **Démarrage avec Windows** (option dans les réglages).
 
 ![Vue Carte](carte.png)
+
+![Vue DX](dx_fr.png)
 
 *Capture réalisée avec des données de propagation simulées.*
 
@@ -37,8 +44,10 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
 
 ### Le plus simple : l'exécutable
 
-Télécharger `HorlogeMondiale.exe` dans la page **Releases** du dépôt et le lancer.
-Rien d'autre à installer.
+**[⬇ Télécharger HorlogeMondiale.exe](https://github.com/f4gopdenis-cyber/horloge-mondiale/releases/latest/download/HorlogeMondiale.exe)**
+(dernière version), puis le lancer. Rien d'autre à installer.
+
+Toutes les versions : [page des Releases](https://github.com/f4gopdenis-cyber/horloge-mondiale/releases)
 
 > **Note :** au premier lancement, Windows peut afficher « Windows a protégé votre
 > ordinateur » (SmartScreen), car l'exécutable n'est pas signé. Cliquer sur
@@ -64,8 +73,9 @@ Double-cliquer sur `construire_exe.bat` (installe PyInstaller et produit
 ## Premier lancement
 
 La fenêtre **⚙ Réglages** s'ouvre automatiquement : choisir la langue, puis indiquer
-son **indicatif** et son **locator**. Ils servent au panneau QTH, aux distances/azimuts
-et au choix de l'ionosonde la plus proche.
+son **indicatif** et son **locator**. Ils servent au panneau QTH, aux distances/azimuts,
+à la carte azimutale, au choix de l'ionosonde la plus proche et à la connexion au DX cluster.
+Le serveur du cluster se change dans les réglages (par défaut `dxc.ve7cc.net:23`).
 
 Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier utilisateur.
 
@@ -74,6 +84,8 @@ Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier ut
 - Indices solaires et conditions de bandes : [N0NBH — hamqsl.com](https://www.hamqsl.com/solar.html)
 - MUF et ionosondes : [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (données GIRO)
 - Ovale auroral : [NOAA SWPC — modèle OVATION](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
+- Préfixes DXCC : [fichiers pays d'AD1C — cty.dat](https://www.country-files.com/)
+- Spots DX : réseau DX cluster (nœud par défaut VE7CC)
 - Contours des terres : paquet Python `global-land-mask` (données NOAA GLOBE)
 - Noms des pays, jours et mois : Unicode CLDR
 

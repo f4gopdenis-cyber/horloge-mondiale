@@ -24,10 +24,16 @@ country time zones, greyline map and live HF propagation conditions.
   - **indices**: SFI, SSN, A, K, X-rays, solar wind, Bz, geomagnetic field, noise;
   - **HF band conditions** day/night and **VHF** conditions (Es, aurora);
   - MUF of the ionosonde nearest to your QTH.
+- **DX cluster** (new in 1.3): live DX spots received over telnet (your callsign is used to log in),
+  shown on the maps and in a list with frequency, country, distance and bearing; band filter.
+- **Azimuthal map centred on your QTH** (new in 1.3): true bearing and distance to every spot
+  and country, distance rings, greyline. Click a spot to draw its great-circle path.
 - **Compact mode**: small always-on-top UTC strip you can move anywhere.
 - **Start with Windows** (option in the settings).
 
 ![Map view](map.png)
+
+![DX view](dx.png)
 
 *Screenshot taken with simulated propagation data.*
 
@@ -58,8 +64,9 @@ Renaming the file to `horloge_mondiale.pyw` avoids the console window.
 ## First launch
 
 The **⚙ Settings** window opens automatically: choose your language and enter your
-**callsign** and **locator**. They are used for the QTH panel, distances/bearings and
-picking the nearest ionosonde.
+**callsign** and **locator**. They are used for the QTH panel, distances/bearings, the
+azimuthal map, the nearest ionosonde and the DX cluster login. The DX cluster server can be
+changed in the settings (default `dxc.ve7cc.net:23`).
 
 Settings are saved in `horloge_mondiale.json`, in your user folder.
 
@@ -68,6 +75,8 @@ Settings are saved in `horloge_mondiale.json`, in your user folder.
 - Solar indices and band conditions: [N0NBH — hamqsl.com](https://www.hamqsl.com/solar.html)
 - MUF and ionosondes: [KC2G — prop.kc2g.com](https://prop.kc2g.com/) (GIRO data)
 - Auroral oval: [NOAA SWPC — OVATION model](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
+- DXCC prefixes: [AD1C country files — cty.dat](https://www.country-files.com/)
+- DX spots: DX cluster network (default node VE7CC)
 - Land outlines: `global-land-mask` Python package (NOAA GLOBE data)
 - Country, day and month names: Unicode CLDR
 

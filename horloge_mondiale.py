@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "1.2"
+VERSION = "1.3"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -703,6 +703,44 @@ TEXTES = {
                "Die Uhr öffnet in der zuletzt genutzten Ansicht (z. B. Kompakt).",
                "L'orologio si riapre nell'ultima vista usata (es. Compatto).",
                "O relógio reabre na última visualização usada (ex. Compacto)."),
+    "vue_dx": ("DX", "DX", "DX", "DX", "DX", "DX"),
+    "cal_spots": ("Spots DX", "DX spots", "Spots DX", "DX-Spots", "Spot DX", "Spots DX"),
+    "dx_tous": ("Tous", "All", "Todos", "Alle", "Tutti", "Todos"),
+    "col_call": ("Indicatif", "Call", "Indicativo", "Rufzeichen", "Nominativo", "Indicativo"),
+    "col_pays": ("Pays", "Country", "País", "Land", "Paese", "País"),
+    "dx_connexion": ("Connexion à {h}…", "Connecting to {h}…", "Conectando a {h}…",
+                     "Verbinde mit {h}…", "Connessione a {h}…", "Conectando a {h}…"),
+    "dx_connecte": ("{h}", "{h}", "{h}", "{h}", "{h}", "{h}"),
+    "dx_erreur": ("Cluster injoignable ({h}), nouvel essai dans 30 s",
+                  "Cluster unreachable ({h}), retrying in 30 s",
+                  "Clúster inaccesible ({h}), reintento en 30 s",
+                  "Cluster nicht erreichbar ({h}), neuer Versuch in 30 s",
+                  "Cluster non raggiungibile ({h}), nuovo tentativo tra 30 s",
+                  "Cluster inacessível ({h}), nova tentativa em 30 s"),
+    "dx_indicatif": ("Indique ton indicatif dans ⚙ Réglages pour recevoir les spots",
+                     "Enter your callsign in ⚙ Settings to receive spots",
+                     "Indica tu indicativo en ⚙ Ajustes para recibir spots",
+                     "Rufzeichen in ⚙ Einstellungen eingeben, um Spots zu empfangen",
+                     "Inserisci il tuo nominativo in ⚙ Impostazioni per ricevere gli spot",
+                     "Informe seu indicativo em ⚙ Configurações para receber spots"),
+    "dx_aucun": ("En attente des spots…", "Waiting for spots…", "Esperando spots…",
+                 "Warte auf Spots…", "In attesa degli spot…", "Aguardando spots…"),
+    "dx_par": ("spot de {s}", "spotted by {s}", "spot de {s}", "gespottet von {s}",
+               "spot di {s}", "spot de {s}"),
+    "cluster": ("DX cluster (hôte:port)", "DX cluster (host:port)", "Clúster DX (host:puerto)",
+                "DX-Cluster (Host:Port)", "Cluster DX (host:porta)", "Cluster DX (host:porta)"),
+    "azi_aide": ("Carte azimutale centrée sur ton QTH : direction et distance réelles",
+                 "Azimuthal map centred on your QTH: true bearing and distance",
+                 "Mapa azimutal centrado en tu QTH: rumbo y distancia reales",
+                 "Azimutalkarte mit deinem QTH im Zentrum: echte Richtung und Entfernung",
+                 "Mappa azimutale centrata sul tuo QTH: direzione e distanza reali",
+                 "Mapa azimutal centrado no seu QTH: direção e distância reais"),
+    "cty_indispo": ("Table des préfixes DXCC (cty.dat) indisponible : spots non placés sur les cartes",
+                    "DXCC prefix table (cty.dat) unavailable: spots not shown on the maps",
+                    "Tabla de prefijos DXCC (cty.dat) no disponible: spots fuera de los mapas",
+                    "DXCC-Präfixtabelle (cty.dat) nicht verfügbar: Spots nicht auf den Karten",
+                    "Tabella prefissi DXCC (cty.dat) non disponibile: spot non mostrati sulle mappe",
+                    "Tabela de prefixos DXCC (cty.dat) indisponível: spots fora dos mapas"),
     "a_propos": ("À propos", "About", "Acerca de", "Über", "Informazioni", "Sobre"),
     "version": ("Version {v}", "Version {v}", "Versión {v}", "Version {v}", "Versione {v}",
                 "Versão {v}"),
@@ -1242,6 +1280,242 @@ def regler_demarrage(actif):
                    creationflags=0x08000000)
 
 
+# ---------------------------------------------------------------- DX cluster
+CLUSTER_DEFAUT = "dxc.ve7cc.net:23"
+CLUSTERS_SECOURS = ["dxc.ve7cc.net:23", "dxc.hamserve.uk:7300", "dxfun.com:8000"]
+CTY_URLS = ["https://www.country-files.com/cty/cty.dat",
+            "http://www.country-files.com/cty/cty.dat"]
+CTY_CACHE = os.path.join(os.path.expanduser("~"), "horloge_mondiale_cty.dat")
+DUREE_SPOT = 60 * 60  # un spot reste affiché 60 min
+
+BANDES_DX = [(1800, 2000, "160"), (3500, 4000, "80"), (5250, 5450, "60"),
+             (7000, 7300, "40"), (10100, 10150, "30"), (14000, 14350, "20"),
+             (18068, 18168, "17"), (21000, 21450, "15"), (24890, 24990, "12"),
+             (28000, 29700, "10"), (50000, 54000, "6"), (70000, 70500, "4"),
+             (144000, 148000, "2")]
+COUL_BANDE = {"160": "#b07cff", "80": "#7c8cff", "60": "#5fa8ff", "40": "#3fc6ff",
+              "30": "#2fd6c0", "20": "#3fd46b", "17": "#a6e04a", "15": "#ffd23f",
+              "12": "#ffa94d", "10": "#ff7b5c", "6": "#ff5ca8", "4": "#e05cff",
+              "2": "#ffffff"}
+FILTRES_BANDES = ["160", "80", "40", "30", "20", "17", "15", "12", "10", "6"]
+
+
+def bande_de(khz):
+    for a, b, nom in BANDES_DX:
+        if a <= khz <= b:
+            return nom
+    return None
+
+
+def mode_de(khz, commentaire):
+    c = commentaire.upper()
+    for m in ("FT8", "FT4", "RTTY", "PSK", "JT65", "SSTV", "CW", "SSB", "USB", "LSB", "FM"):
+        if re.search(r"\b" + m + r"\b", c):
+            return "SSB" if m in ("USB", "LSB") else m
+    for f in (1840, 3573, 5357, 7074, 10136, 14074, 18100, 21074, 24915, 28074, 50313):
+        if abs(khz - f) <= 3:
+            return "FT8"
+    sous = khz % 1000
+    bande = bande_de(khz)
+    if bande in ("30",):
+        return "CW"
+    if bande and sous < 70 and bande not in ("6", "4", "2", "60"):
+        return "CW"
+    return ""
+
+
+class TablePrefixes:
+    """Table DXCC d'AD1C (cty.dat) : indicatif -> entité, continent, lat, lon."""
+    RE_ITEM = re.compile(r"^(=?)([A-Z0-9/]+)(?:\((\d+)\))?(?:\[(\d+)\])?"
+                         r"(?:<(-?[\d.]+)/(-?[\d.]+)>)?(?:\{(\w+)\})?(?:~(-?[\d.]+)~)?$")
+
+    def __init__(self):
+        self.prefixes, self.exacts = {}, {}
+        self.long_max = 0
+
+    def charger_texte(self, texte):
+        prefixes, exacts = {}, {}
+        entite = None
+        for ligne in texte.splitlines():
+            if not ligne.strip():
+                continue
+            if not ligne[0].isspace():
+                ch = [x.strip() for x in ligne.split(":")]
+                if len(ch) < 8:
+                    entite = None
+                    continue
+                try:  # longitude de cty.dat comptée positive vers l'OUEST
+                    entite = (ch[0], ch[3], float(ch[4]), -float(ch[5]))
+                except ValueError:
+                    entite = None
+                    continue
+                pfx = ch[7].lstrip("*")
+                prefixes.setdefault(pfx, entite)
+            elif entite:
+                for item in ligne.strip().rstrip(";").split(","):
+                    m = self.RE_ITEM.match(item.strip())
+                    if not m:
+                        continue
+                    exact, pfx = m.group(1), m.group(2)
+                    nom, cont, lat, lon = entite
+                    if m.group(5):
+                        lat, lon = float(m.group(5)), -float(m.group(6))
+                    if m.group(7):
+                        cont = m.group(7)
+                    (exacts if exact else prefixes)[pfx] = (nom, cont, lat, lon)
+        if prefixes:
+            self.prefixes, self.exacts = prefixes, exacts
+            self.long_max = max(len(p) for p in prefixes)
+        return bool(prefixes)
+
+    def __bool__(self):
+        return bool(self.prefixes)
+
+    def chercher(self, indicatif):
+        call = indicatif.upper().strip()
+        if call in self.exacts:
+            return self.exacts[call]
+        if "/" in call:
+            morceaux = [p for p in call.split("/")
+                        if p and p not in ("P", "M", "MM", "AM", "QRP", "A", "B", "R", "LH")
+                        and not p.isdigit()]
+            if len(morceaux) >= 2:
+                # « F/DL1ABC » ou « DL1ABC/F » : la partie la plus courte est le préfixe
+                court = min(morceaux, key=len)
+                call = court if len(court) <= 4 else morceaux[0]
+            elif morceaux:
+                call = morceaux[0]
+        for n in range(min(len(call), self.long_max), 0, -1):
+            e = self.prefixes.get(call[:n])
+            if e:
+                return e
+        return None
+
+
+def charger_cty(table):
+    """Charge cty.dat depuis le cache (moins de 30 jours) ou Internet."""
+    try:
+        if time.time() - os.path.getmtime(CTY_CACHE) < 30 * 86400:
+            with open(CTY_CACHE, encoding="latin-1") as f:
+                if table.charger_texte(f.read()):
+                    return True
+    except OSError:
+        pass
+    for url in CTY_URLS:
+        try:
+            texte = telecharger(url).decode("latin-1")
+            if table.charger_texte(texte):
+                try:
+                    with open(CTY_CACHE, "w", encoding="latin-1") as f:
+                        f.write(texte)
+                except OSError:
+                    pass
+                return True
+        except Exception:
+            continue
+    try:  # cache ancien mais utilisable
+        with open(CTY_CACHE, encoding="latin-1") as f:
+            return table.charger_texte(f.read())
+    except OSError:
+        return False
+
+
+RE_SPOT = re.compile(r"^DX de\s+([A-Z0-9/#\-]+):?\s+(\d+(?:\.\d+)?)\s+([A-Z0-9/]+)\s+(.*?)\s*(\d{4})Z",
+                     re.I)
+RE_SHDX = re.compile(r"^\s*(\d+(?:\.\d+)?)\s+([A-Z0-9/]+)\s+\d{1,2}-[A-Za-z]{3}-\d{4}\s+(\d{4})Z\s+"
+                     r"(.*?)\s*<([A-Z0-9/#\-]+)>", re.I)
+RE_TELNET = re.compile(rb"\xff[\xfb-\xfe].|\xff[\xf0-\xfa]", re.S)
+
+
+def lire_ligne_spot(ligne):
+    """Analyse une ligne de cluster -> (spotter, kHz, indicatif, commentaire, HHMM) ou None."""
+    m = RE_SPOT.match(ligne)
+    if m:
+        return m.group(1), float(m.group(2)), m.group(3).upper(), m.group(4).strip(), m.group(5)
+    m = RE_SHDX.match(ligne)
+    if m:
+        return m.group(5), float(m.group(1)), m.group(2).upper(), m.group(4).strip(), m.group(3)
+    return None
+
+
+class ClientCluster(threading.Thread):
+    """Connexion telnet au DX cluster, reconnexion automatique, spots dans une file."""
+
+    def __init__(self, indicatif, serveur):
+        super().__init__(daemon=True)
+        self.indicatif = indicatif
+        self.serveurs = [serveur] + [s for s in CLUSTERS_SECOURS if s != serveur]
+        self.file = []
+        self.verrou = threading.Lock()
+        self.etat = ("connexion", self.serveurs[0])
+        self.arret = threading.Event()
+        self.sock = None
+
+    def stop(self):
+        self.arret.set()
+        try:
+            if self.sock:
+                self.sock.close()
+        except OSError:
+            pass
+
+    def run(self):
+        import socket
+        i = 0
+        while not self.arret.is_set():
+            serveur = self.serveurs[i % len(self.serveurs)]
+            hote, _, port = serveur.partition(":")
+            self.etat = ("connexion", serveur)
+            try:
+                self.sock = socket.create_connection((hote, int(port or 23)), timeout=20)
+                self.sock.settimeout(300)
+                self.dialoguer(serveur)
+            except Exception:
+                pass
+            finally:
+                try:
+                    self.sock.close()
+                except Exception:
+                    pass
+            if self.arret.is_set():
+                break
+            self.etat = ("erreur", serveur)
+            i += 1
+            self.arret.wait(30)
+
+    def dialoguer(self, serveur):
+        tampon = b""
+        connecte = False
+        debut = time.time()
+        while not self.arret.is_set():
+            try:
+                bloc = self.sock.recv(4096)
+            except OSError:
+                return
+            if not bloc:
+                return
+            tampon = RE_TELNET.sub(b"", tampon + bloc)
+            texte_brut = tampon.decode("latin-1", "replace").lower()
+            if not connecte and ("login" in texte_brut or "call" in texte_brut
+                                 or time.time() - debut > 4):
+                self.sock.sendall(self.indicatif.encode() + b"\r\n")
+                time.sleep(1.5)
+                self.sock.sendall(b"sh/dx 30\r\n")
+                connecte = True
+                self.etat = ("connecte", serveur)
+            *lignes, tampon = tampon.split(b"\n")
+            for l in lignes:
+                spot = lire_ligne_spot(l.decode("latin-1", "replace").strip("\r "))
+                if spot:
+                    with self.verrou:
+                        self.file.append(spot)
+
+    def prendre(self):
+        with self.verrou:
+            f, self.file = self.file, []
+        return f
+
+
 # ================================================================ interface
 POLICES = {"txt": "Segoe UI", "titre": "Segoe UI", "num": "Consolas", "mono": "Consolas"}
 
@@ -1530,19 +1804,27 @@ class App(tk.Tk):
                 v["lat"], v["lon"] = self.coords_tz[v["tz"]]
             self.villes.append(v)
 
+        self.spots = []
+        self.cty = TablePrefixes()
+        self._cty_pret = None
+        self.cluster = None
         self.construire_entete()
         self.construire_barre()
         self.page_villes = tk.Frame(self, bg=FOND)
         self.page_carte = tk.Frame(self, bg=FOND)
+        self.page_dx = tk.Frame(self, bg=FOND)
         self.construire_page_villes()
         self.construire_page_carte()
+        self.construire_page_dx()
+        self.charger_table_cty()
+        self.demarrer_cluster()
 
         self.compact = None
         self.vue = None
         self._derniere_seconde = None
         self._derniere_minute_carte = None
         vue = self.cfg.get("vue", "villes")
-        self.afficher_vue("carte" if vue == "carte" else "villes")
+        self.afficher_vue(vue if vue in ("carte", "dx") else "villes")
         if vue == "compact":
             self.after(50, self.ouvrir_compact)
         self.protocol("WM_DELETE_WINDOW", self.quitter)
@@ -1592,6 +1874,8 @@ class App(tk.Tk):
 
     def quitter(self):
         self.sauver()
+        if self.cluster:
+            self.cluster.stop()
         try:  # annuler les minuteries en attente (utile lors d'une relance)
             for ident in self.tk.splitlist(self.tk.call("after", "info")):
                 self.after_cancel(ident)
@@ -1668,7 +1952,8 @@ class App(tk.Tk):
         self.bouton(barre, "ⓘ", self.dialogue_a_propos).pack(side="right", padx=(6, 0))
         self.bouton(barre, "⚙  " + T("reglages"), self.dialogue_reglages).pack(side="right")
         self.segments = Segments(barre, (("villes", T("vue_pays")), ("carte", T("vue_carte")),
-                                         ("compact", T("vue_compact"))), self.afficher_vue)
+                                         ("dx", T("vue_dx")), ("compact", T("vue_compact"))),
+                                 self.afficher_vue)
         self.segments.pack(side="right", padx=(0, 10))
 
     def basculer_secondes(self):
@@ -1683,9 +1968,9 @@ class App(tk.Tk):
         if vue == "compact":
             self.ouvrir_compact()
             return
-        self.page_villes.pack_forget()
-        self.page_carte.pack_forget()
-        (self.page_carte if vue == "carte" else self.page_villes).pack(
+        for page in (self.page_villes, self.page_carte, self.page_dx):
+            page.pack_forget()
+        {"carte": self.page_carte, "dx": self.page_dx}.get(vue, self.page_villes).pack(
             fill="both", expand=True)
         self.segments.choisir(vue)
         self.vue = vue
@@ -1693,6 +1978,9 @@ class App(tk.Tk):
         self.sauver()
         if vue == "carte":
             self.dessiner_carte()
+        elif vue == "dx":
+            self.dessiner_az()
+            self.maj_liste_spots()
 
     # ------------------------------------------------------------ page pays
     def construire_page_villes(self):
@@ -1852,9 +2140,10 @@ class App(tk.Tk):
         cal = tk.Frame(p, bg=FOND)
         cal.pack(fill="x", padx=20, pady=(6, 0))
         calques = self.cfg.setdefault("calques", {"muf": True, "stations": True, "aurore": True})
+        calques.setdefault("spots", True)
         self.v_calques = {}
         for cle, texte in (("muf", "MUF"), ("stations", T("cal_stations")),
-                           ("aurore", T("cal_aurore"))):
+                           ("aurore", T("cal_aurore")), ("spots", T("cal_spots"))):
             v = tk.BooleanVar(value=calques.get(cle, True))
             self.v_calques[cle] = v
             Bascule(cal, texte, v, self.changer_calques).pack(side="left", padx=(0, 16))
@@ -2130,6 +2419,14 @@ class App(tk.Tk):
         x, y = self.xy(math.degrees(decl), sublon)
         cv.create_oval(x - 9, y - 9, x + 9, y + 9, fill="#ffd54a", outline="#fff3b0",
                        width=2, tags="ov")
+        # spots DX
+        if self.v_calques["spots"].get():
+            for sp in reversed(self.spots_visibles()):
+                if "lat" in sp:
+                    x, y = self.xy(sp["lat"], sp["lon"])
+                    cv.create_polygon(x, y - 4, x + 4, y, x, y + 4, x - 4, y,
+                                      fill=COUL_BANDE.get(sp["bande"], TEXTE),
+                                      outline="#000000", tags="ov")
         # QTH
         if self.qth:
             x, y = self.xy(*self.qth)
@@ -2147,6 +2444,18 @@ class App(tk.Tk):
         now = datetime.now(timezone.utc)
         h = hauteur_soleil(lat, lon, soleil(now))
         txt = f"{latlon_vers_locator(lat, lon)}  {fmt_latlon(lat, lon)}"
+        # spot DX proche ?
+        if self.v_calques["spots"].get():
+            for sp in self.spots_visibles():
+                if "lat" not in sp:
+                    continue
+                x, y = self.xy(sp["lat"], sp["lon"])
+                if abs(x - e.x) <= 5 and abs(y - e.y) <= 5:
+                    dist = (f"  ·  {fmt_km(sp['dist'])}  az {sp['az']:03.0f}°" if "dist" in sp else "")
+                    self.l_survol.configure(
+                        text=f"{sp['call']}  {sp['khz']:.1f} kHz  {sp['mode']}  ·  "
+                             f"{sp.get('pays', '')}{dist}  ·  {sp['t']:%H:%M}Z")
+                    return
         # ionosonde proche ?
         if self.v_calques["stations"].get():
             for st in self.prop.get("stations") or []:
@@ -2245,6 +2554,384 @@ class App(tk.Tk):
         self.afficher_vue(getattr(self, "vue_avant_compact", "villes"))
 
     # ------------------------------------------------------------ réglages
+    # ------------------------------------------------------------ spots DX
+    def demarrer_cluster(self):
+        if self.cluster:
+            self.cluster.stop()
+            self.cluster = None
+        indicatif = (self.cfg.get("indicatif") or "").strip()
+        if indicatif:
+            self.cluster = ClientCluster(indicatif, self.cfg.get("cluster") or CLUSTER_DEFAUT)
+            self.cluster.start()
+
+    def charger_table_cty(self):
+        def travail():
+            ok = charger_cty(self.cty)
+            self._cty_pret = "ok" if ok else "erreur"
+        threading.Thread(target=travail, daemon=True).start()
+
+    def localiser_spot(self, sp):
+        e = self.cty.chercher(sp["call"]) if self.cty else None
+        if e:
+            sp["pays"], sp["cont"], sp["lat"], sp["lon"] = e
+            if self.qth:
+                sp["dist"], sp["az"] = distance_azimut(self.qth[0], self.qth[1], e[2], e[3])
+
+    def integrer_spots(self, bruts):
+        maintenant = datetime.now(timezone.utc)
+        for spotter, khz, call, comm, hhmm in bruts:
+            bande = bande_de(khz)
+            if not bande:
+                continue
+            t = maintenant.replace(hour=int(hhmm[:2]) % 24, minute=int(hhmm[2:]) % 60,
+                                   second=0, microsecond=0)
+            if t > maintenant + timedelta(minutes=5):
+                t -= timedelta(days=1)
+            sp = {"t": t, "khz": khz, "call": call, "spotter": spotter, "comm": comm,
+                  "bande": bande, "mode": mode_de(khz, comm)}
+            self.localiser_spot(sp)
+            # même station sur la même bande : on garde le plus récent
+            self.spots = [s for s in self.spots
+                          if not (s["call"] == call and s["bande"] == bande)]
+            self.spots.append(sp)
+        limite = maintenant - timedelta(seconds=DUREE_SPOT)
+        self.spots = [s for s in self.spots if s["t"] >= limite][-300:]
+        self.spots.sort(key=lambda s: s["t"], reverse=True)
+
+    def spots_visibles(self):
+        f = self.cfg.get("filtre_bande", "tous")
+        return [s for s in self.spots if f == "tous" or s["bande"] == f]
+
+    # ------------------------------------------------------------ page DX
+    def construire_page_dx(self):
+        p = self.page_dx
+        corps = tk.Frame(p, bg=FOND)
+        corps.pack(fill="both", expand=True, padx=16, pady=(6, 10))
+
+        # carte azimutale
+        gauche = tk.Frame(corps, bg=FOND)
+        gauche.pack(side="left", anchor="n")
+        self.AZ_R = 210
+        self.AZ_M = 26
+        taille = 2 * (self.AZ_R + self.AZ_M)
+        self.cv_az = tk.Canvas(gauche, width=taille, height=taille, bg=FOND,
+                               highlightthickness=0)
+        self.cv_az.pack()
+        self.l_az = tk.Label(gauche, text=T("azi_aide"), font=F("mono", 9), fg=TEXTE_DIM,
+                             bg=FOND, wraplength=taille)
+        self.l_az.pack(pady=(4, 0))
+        self.img_az = [tk.PhotoImage(width=2 * self.AZ_R, height=2 * self.AZ_R) for _ in range(2)]
+        self.img_az_actif = 0
+        self.item_az = self.cv_az.create_image(self.AZ_M, self.AZ_M, anchor="nw",
+                                               image=self.img_az[0])
+        self._geo_az = None      # géométrie précalculée (dépend du QTH)
+        self._qth_az = None
+        self._rendu_az = None
+        self._minute_az = None
+        self.cv_az.bind("<Motion>", self.survol_az)
+        self.cv_az.bind("<Leave>", lambda e: (self.cv_az.delete("hl"),
+                                               self.l_az.configure(text=T("azi_aide"))))
+
+        # liste des spots
+        cadre, droite = self.panneau(corps, UTC_COUL)
+        cadre.pack(side="left", fill="both", expand=True, padx=(14, 0))
+        droite.configure(padx=10, pady=8)
+        tete = tk.Frame(droite, bg=PANNEAU)
+        tete.pack(fill="x")
+        tk.Label(tete, text="DX CLUSTER", font=F("titre", 9, "bold"), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(side="left")
+        self.l_cluster = tk.Label(tete, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU)
+        self.l_cluster.pack(side="right")
+
+        filtres = [("tous", T("dx_tous"))] + [(b, b) for b in FILTRES_BANDES]
+        self.seg_bandes = Segments(droite, filtres, self.choisir_bande)
+        for lab in self.seg_bandes.items.values():
+            lab.configure(padx=5, font=F("txt", 8))
+        self.seg_bandes.pack(anchor="w", pady=(8, 6))
+        self.seg_bandes.choisir(self.cfg.get("filtre_bande", "tous"))
+
+        self.tab_spots = tk.Frame(droite, bg=PANNEAU)
+        self.tab_spots.pack(fill="both", expand=True)
+        entetes = ("UTC", "kHz", T("col_call"), T("col_pays"), "km", "Az")
+        largeurs = (5, 8, 11, 15, 6, 4)
+        for j, (txt, w) in enumerate(zip(entetes, largeurs)):
+            tk.Label(self.tab_spots, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
+                     width=w, anchor="w").grid(row=0, column=j, sticky="w")
+        self.lignes_spots = []
+        for i in range(17):
+            ligne = []
+            for j, w in enumerate(largeurs):
+                l = tk.Label(self.tab_spots, text="", width=w, anchor="w", bg=PANNEAU,
+                             fg=TEXTE, cursor="hand2",
+                             font=F("mono", 9, "bold") if j == 2 else F("mono", 9))
+                l.grid(row=i + 1, column=j, sticky="w", pady=0)
+                l.bind("<Button-1>", lambda e, k=i: self.choisir_spot(k))
+                ligne.append(l)
+            self.lignes_spots.append(ligne)
+        self.l_spot_detail = tk.Label(droite, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
+                                      anchor="w", justify="left", wraplength=400)
+        self.l_spot_detail.pack(fill="x", pady=(8, 0))
+        self.spots_affiches = []
+        self.spot_choisi = None
+
+    def choisir_bande(self, b):
+        self.cfg["filtre_bande"] = b
+        self.seg_bandes.choisir(b)
+        self.sauver()
+        self.maj_liste_spots()
+        self.dessiner_spots_az()
+        if self.vue == "carte" and self.sol_carte:
+            self.dessiner_surcouches(self.sol_carte)
+
+    def etat_cluster_txt(self):
+        if not (self.cfg.get("indicatif") or "").strip():
+            return T("dx_indicatif"), ORANGE
+        if not self.cluster:
+            return "", TEXTE_DIM
+        etat, serveur = self.cluster.etat
+        if etat == "connecte":
+            return "● " + T("dx_connecte", h=serveur), VERT
+        if etat == "erreur":
+            return T("dx_erreur", h=serveur), ORANGE
+        return T("dx_connexion", h=serveur), TEXTE_DIM
+
+    def maj_liste_spots(self):
+        txt, coul = self.etat_cluster_txt()
+        self.l_cluster.configure(text=txt, fg=coul)
+        spots = self.spots_visibles()
+        self.spots_affiches = spots[:len(self.lignes_spots)]
+        for i, ligne in enumerate(self.lignes_spots):
+            if i < len(self.spots_affiches):
+                s = self.spots_affiches[i]
+                vals = (f"{s['t']:%H%M}", f"{s['khz']:.1f}", s["call"],
+                        (s.get("pays") or "?")[:15],
+                        f"{s['dist']:.0f}" if "dist" in s else "",
+                        f"{s['az']:.0f}°" if "az" in s else "")
+                fond = SEL if s is self.spot_choisi else PANNEAU
+                for j, (l, v) in enumerate(zip(ligne, vals)):
+                    l.configure(text=v, bg=fond,
+                                fg=COUL_BANDE.get(s["bande"], TEXTE) if j == 2 else
+                                (TEXTE if j in (1, 3) else TEXTE_DIM))
+            else:
+                for l in ligne:
+                    l.configure(text="", bg=PANNEAU)
+        if not self.spots_affiches and (self.cfg.get("indicatif") or "").strip():
+            self.lignes_spots[0][3].configure(text=T("dx_aucun"), fg=TEXTE_DIM)
+        if self._cty_pret == "erreur":
+            self.l_spot_detail.configure(text=T("cty_indispo"), fg=ORANGE)
+        self.afficher_detail_spot()
+
+    def choisir_spot(self, k):
+        if k < len(self.spots_affiches):
+            s = self.spots_affiches[k]
+            self.spot_choisi = None if s is self.spot_choisi else s
+            self.maj_liste_spots()
+            self.dessiner_spots_az()
+
+    def afficher_detail_spot(self):
+        s = self.spot_choisi
+        if s is None or s not in self.spots:
+            self.spot_choisi = None
+            if self._cty_pret != "erreur":
+                self.l_spot_detail.configure(text="")
+            return
+        lignes = [f"{s['call']}  ·  {s['khz']:.1f} kHz  ·  {s['bande']} m"
+                  + (f"  ·  {s['mode']}" if s["mode"] else "")]
+        if "pays" in s:
+            lignes.append(f"{s['pays']} ({s['cont']})"
+                          + (f"  ·  {fmt_km(s['dist'])}  ·  az {s['az']:03.0f}°" if "dist" in s else ""))
+        lignes.append(f"{s['comm']}  —  " + T("dx_par", s=s["spotter"]) + f"  ·  {s['t']:%H:%M} UTC")
+        self.l_spot_detail.configure(text="\n".join(lignes), fg=TEXTE)
+
+    # ---- carte azimutale
+    def az_xy(self, lat, lon):
+        """Position (x, y) sur le canvas azimutal d'un point géographique."""
+        d, az = distance_azimut(self.qth[0], self.qth[1], lat, lon)
+        r = d / 20015.1 * self.AZ_R
+        c = self.AZ_M + self.AZ_R
+        a = math.radians(az)
+        return c + r * math.sin(a), c - r * math.cos(a)
+
+    def az_inverse(self, x, y):
+        """Point géographique sous le pixel (x, y) relatif au centre ; None hors disque."""
+        dist = math.hypot(x, y)
+        if dist > self.AZ_R:
+            return None
+        c = dist / self.AZ_R * math.pi
+        az = math.atan2(x, -y)
+        p0, l0 = math.radians(self.qth[0]), math.radians(self.qth[1])
+        sl = math.sin(p0) * math.cos(c) + math.cos(p0) * math.sin(c) * math.cos(az)
+        lat = math.asin(max(-1.0, min(1.0, sl)))
+        lon = l0 + math.atan2(math.sin(az) * math.sin(c) * math.cos(p0),
+                              math.cos(c) - math.sin(p0) * sl)
+        lon = (math.degrees(lon) + 180) % 360 - 180
+        return math.degrees(lat), lon, c * 6371.0, math.degrees(az) % 360
+
+    def dessiner_az(self):
+        if not self.qth:
+            self.cv_az.delete("ov")
+            self.cv_az.itemconfigure(self.item_az, state="hidden")
+            c = self.AZ_M + self.AZ_R
+            self.cv_az.create_text(c, c, text=T("locator_manquant"), fill=TEXTE_DIM,
+                                   font=F("txt", 11), tags="ov")
+            return
+        self.cv_az.itemconfigure(self.item_az, state="normal")
+        now = datetime.now(timezone.utc)
+        self._minute_az = (now.hour, now.minute)
+        self._rendu_az = self._generateur_az(soleil(now))
+        self._etape_az(self._rendu_az)
+
+    def _etape_az(self, gen):
+        if gen is not self._rendu_az:
+            return
+        try:
+            next(gen)
+            self.after(1, self._etape_az, gen)
+        except StopIteration:
+            pass
+
+    def _generateur_az(self, sol):
+        R = self.AZ_R
+        D = 2 * R
+        if self._geo_az is None or self._qth_az != self.qth:
+            # précalcul (une fois par QTH) : pour chaque pixel, lat/lon et pixel du planisphère
+            geo = []
+            for y in range(D):
+                ligne = []
+                for x in range(D):
+                    g = self.az_inverse(x - R + 0.5, y - R + 0.5)
+                    if g is None:
+                        ligne.append(None)
+                    else:
+                        lat, lon = g[0], g[1]
+                        r = min(CARTE_H - 1, int((90 - lat) * 2))
+                        cc = min(CARTE_L - 1, int((lon + 180) * 2))
+                        ligne.append((r, cc, math.sin(math.radians(lat)),
+                                      math.cos(math.radians(lat)), math.radians(lon)))
+                geo.append(ligne)
+                if y % 30 == 29:
+                    yield
+            self._geo_az, self._qth_az = geo, self.qth
+        decl, sublon = sol
+        sd, cd, sl = math.sin(decl), math.cos(decl), math.radians(sublon)
+        s0, s1 = math.sin(math.radians(-12)), math.sin(math.radians(2))
+        k = 15.999 / (s1 - s0)
+        P, base = self.palette, self.base
+        dest = self.img_az[1 - self.img_az_actif]
+        pas = 40
+        for y0 in range(0, D, pas):
+            lignes = []
+            for y in range(y0, min(y0 + pas, D)):
+                px = []
+                for g in self._geo_az[y]:
+                    if g is None:
+                        px.append(FOND)
+                    else:
+                        r, cc, slat, clat, lon = g
+                        v = int((slat * sd + clat * cd * math.cos(lon - sl) - s0) * k)
+                        px.append(P[base[r][cc] + (15 if v > 15 else (v if v > 0 else 0))])
+                lignes.append("{" + " ".join(px) + "}")
+            dest.put(" ".join(lignes), to=(0, y0))
+            yield
+        self.img_az_actif = 1 - self.img_az_actif
+        self.cv_az.itemconfigure(self.item_az, image=dest)
+        self.dessiner_fond_az(sol)
+        self.dessiner_spots_az()
+
+    def dessiner_fond_az(self, sol):
+        cv = self.cv_az
+        cv.delete("ov")
+        R, M = self.AZ_R, self.AZ_M
+        c = M + R
+        # cercles de distance
+        for km in (5000, 10000, 15000):
+            r = km / 20015.1 * R
+            cv.create_oval(c - r, c - r, c + r, c + r, outline="#3a4d63", dash=(2, 4), tags="ov")
+            cv.create_text(c + 3, c - r + 2, text=f"{km // 1000} 000 km", anchor="nw",
+                           fill="#8fa3b8", font=F("txt", 7), tags="ov")
+        cv.create_oval(c - R, c - R, c + R, c + R, outline=BORD, width=2, tags="ov")
+        # rayons d'azimut
+        for a in range(0, 360, 30):
+            ra = math.radians(a)
+            cv.create_line(c, c, c + R * math.sin(ra), c - R * math.cos(ra), fill="#3a4d63",
+                           dash=(2, 4), tags="ov")
+            lab = {0: "N", 90: "E", 180: "S", 270: "W" if LANGUE[0] in ("en", "de") else "O"}.get(a, f"{a}°")
+            cv.create_text(c + (R + 13) * math.sin(ra), c - (R + 13) * math.cos(ra), text=lab,
+                           fill=TEXTE if a % 90 == 0 else TEXTE_DIM,
+                           font=F("titre", 9, "bold") if a % 90 == 0 else F("txt", 8), tags="ov")
+        # terminateur
+        decl, sublon = sol
+        sd = math.sin(decl) if abs(decl) > 1e-4 else 1e-4
+        seg, prec = [], None
+        for i in range(0, 361):
+            lon = -180 + i
+            lat = math.degrees(math.atan(-math.cos(math.radians(lon - sublon)) * math.cos(decl) / sd))
+            x, y = self.az_xy(lat, lon)
+            if prec and math.hypot(x - prec[0], y - prec[1]) > 40:
+                if len(seg) >= 4:
+                    cv.create_line(*seg, fill=ACCENT, width=2, tags="ov")
+                seg = []
+            seg += [x, y]
+            prec = (x, y)
+        if len(seg) >= 4:
+            cv.create_line(*seg, fill=ACCENT, width=2, tags="ov")
+        # pays affichés
+        for v in self.villes:
+            if v.get("lat") is not None:
+                x, y = self.az_xy(v["lat"], v["lon"])
+                cv.create_oval(x - 2, y - 2, x + 2, y + 2, fill=TEXTE, outline="", tags="ov")
+        # QTH au centre
+        cv.create_oval(c - 5, c - 5, c + 5, c + 5, fill=QTH_COUL, outline="#ffffff", tags="ov")
+
+    def dessiner_spots_az(self):
+        cv = self.cv_az
+        cv.delete("spot")
+        if not self.qth or self._geo_az is None:
+            return
+        spots = [s for s in self.spots_visibles() if "lat" in s]
+        etiquettes = 0
+        for s in reversed(spots):  # les plus récents par-dessus
+            x, y = self.az_xy(s["lat"], s["lon"])
+            coul = COUL_BANDE.get(s["bande"], TEXTE)
+            cv.create_polygon(x, y - 5, x + 5, y, x, y + 5, x - 5, y, fill=coul,
+                              outline="#000000", tags="spot")
+        for s in spots[:12]:
+            x, y = self.az_xy(s["lat"], s["lon"])
+            cv.create_text(x + 7, y, text=s["call"], anchor="w", fill=COUL_BANDE.get(s["bande"], TEXTE),
+                           font=F("txt", 7, "bold"), tags="spot")
+            etiquettes += 1
+        s = self.spot_choisi
+        if s is not None and "lat" in s:
+            c = self.AZ_M + self.AZ_R
+            x, y = self.az_xy(s["lat"], s["lon"])
+            cv.create_line(c, c, x, y, fill="#ffffff", width=2, tags="spot")
+            cv.create_oval(x - 8, y - 8, x + 8, y + 8, outline="#ffffff", width=2, tags="spot")
+
+    def survol_az(self, e):
+        if not self.qth:
+            return
+        c = self.AZ_M + self.AZ_R
+        g = self.az_inverse(e.x - c, e.y - c)
+        self.cv_az.delete("hl")
+        if g is None:
+            self.l_az.configure(text=T("azi_aide"))
+            return
+        lat, lon, km, az = g
+        for s in self.spots_visibles():
+            if "lat" not in s:
+                continue
+            x, y = self.az_xy(s["lat"], s["lon"])
+            if abs(x - e.x) <= 6 and abs(y - e.y) <= 6:
+                self.cv_az.create_line(c, c, x, y, fill="#ffffff", dash=(3, 3), tags="hl")
+                self.l_az.configure(
+                    text=f"{s['call']}  {s['khz']:.1f}  {s.get('pays', '')}  ·  "
+                         f"{fmt_km(s['dist'])}  az {s['az']:03.0f}°")
+                return
+        h = hauteur_soleil(lat, lon, soleil(datetime.now(timezone.utc)))
+        self.cv_az.create_line(c, c, e.x, e.y, fill="#ffffff", dash=(3, 3), tags="hl")
+        self.l_az.configure(text=f"{latlon_vers_locator(lat, lon)}  ·  {fmt_km(km)}  az {az:03.0f}°"
+                                 "  ·  " + T("soleil", h=f"{h:+.0f}", etat=T(etat_soleil(h))))
+
     def dialogue_a_propos(self):
         d = tk.Toplevel(self)
         d.title(T("a_propos"))
@@ -2288,7 +2975,7 @@ class App(tk.Tk):
         lien(f, "↗  " + T("projet_github"), URL_GITHUB).pack(anchor="w")
         lien(f, "↗  " + T("page_qrz") + " — F4GOP", URL_QRZ).pack(anchor="w", pady=(2, 0))
 
-        tk.Label(d, text=T("donnees") + " : N0NBH (hamqsl.com) · KC2G / GIRO · NOAA SWPC · Unicode CLDR",
+        tk.Label(d, text=T("donnees") + " : N0NBH (hamqsl.com) · KC2G / GIRO · NOAA SWPC · AD1C (cty.dat) · DX cluster · Unicode CLDR",
                  font=F("txt", 8), fg=TEXTE_DIM, bg=FOND).pack(anchor="w", pady=(14, 0))
         tk.Label(d, text=T("licence"), font=F("txt", 8), fg=TEXTE_DIM,
                  bg=FOND).pack(anchor="w", pady=(2, 0))
@@ -2338,27 +3025,44 @@ class App(tk.Tk):
         e_loc.insert(0, self.cfg.get("locator", ""))
         e_loc.grid(row=2, column=1, sticky="w", pady=4, ipady=3)
 
+        etiquette(T("cluster"), 3)
+        e_clu = style_entree(tk.Entry(d, width=24))
+        e_clu.insert(0, self.cfg.get("cluster") or CLUSTER_DEFAUT)
+        e_clu.grid(row=3, column=1, sticky="w", pady=4, ipady=3)
+
         v_dem = tk.BooleanVar(value=demarrage_actif())
         cb = Bascule(d, T("demarrage"), v_dem)
-        cb.grid(row=3, column=0, columnspan=2, sticky="w", pady=(14, 0))
+        cb.grid(row=4, column=0, columnspan=2, sticky="w", pady=(14, 0))
         if os.name != "nt":
             cb.lb.configure(text=T("demarrage") + " " + T("windows_seul"))
         tk.Label(d, text=T("rouvre"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
-            row=4, column=0, columnspan=2, sticky="w", pady=(4, 0))
+            row=5, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
         def valider():
             loc = e_loc.get().strip().upper()
             if loc and not LOCATOR_RE.match(loc):
                 messagebox.showerror("Locator", T("locator_invalide"), parent=d)
                 return
+            ancien = (self.cfg.get("indicatif"), self.cfg.get("cluster"))
             self.cfg["indicatif"] = e_ind.get().strip().upper()
             self.cfg["locator"] = loc
+            serveur = e_clu.get().strip() or CLUSTER_DEFAUT
+            if ":" not in serveur:
+                serveur += ":23"
+            self.cfg["cluster"] = serveur
             self.maj_qth()
+            for sp in self.spots:
+                sp.pop("dist", None)
+                sp.pop("az", None)
+                self.localiser_spot(sp)
             if os.name == "nt" and v_dem.get() != demarrage_actif():
                 try:
                     regler_demarrage(v_dem.get())
                 except Exception as ex:
                     messagebox.showerror(T("demarrage"), T("demarrage_err", e=ex), parent=d)
+            if ancien != (self.cfg.get("indicatif"), self.cfg.get("cluster")):
+                self.spots = []
+                self.demarrer_cluster()
             nouvelle = choix["langue"] != self.cfg.get("langue")
             self.cfg["langue"] = choix["langue"]
             self.sauver()
@@ -2371,9 +3075,12 @@ class App(tk.Tk):
             self.maj_tableau()
             if self.vue == "carte":
                 self.dessiner_carte()
+            elif self.vue == "dx":
+                self.dessiner_az()
+                self.maj_liste_spots()
 
         self.bouton(d, T("enregistrer"), valider, primaire=True).grid(
-            row=5, column=1, sticky="e", pady=(16, 0))
+            row=6, column=1, sticky="e", pady=(16, 0))
         d.bind("<Return>", lambda e: valider())
         e_ind.focus_set()
 
@@ -2402,6 +3109,27 @@ class App(tk.Tk):
             f = (lambda t: t.astimezone().strftime("%H:%M") if t else "--:--")
             self.l_qth_lever.configure(text=T("lever_coucher", l=f(lev), c=f(cou)))
 
+    def tick_dx(self, now):
+        if self._cty_pret == "ok":  # table DXCC arrivée : placer les spots déjà reçus
+            self._cty_pret = "fait"
+            for sp in self.spots:
+                self.localiser_spot(sp)
+        nouveaux = self.cluster.prendre() if self.cluster else []
+        if nouveaux:
+            self.integrer_spots(nouveaux)
+        t = time.time()
+        if t - getattr(self, "_maj_dx", 0) < (2 if nouveaux else 5):
+            return
+        self._maj_dx = t
+        if self.vue == "dx" and not self.compact:
+            self.maj_liste_spots()
+            if (now.hour, now.minute) != self._minute_az:
+                self.dessiner_az()
+            elif nouveaux:
+                self.dessiner_spots_az()
+        elif self.vue == "carte" and nouveaux and self.sol_carte and not self.compact:
+            self.dessiner_surcouches(self.sol_carte)
+
     def tick(self):
         now = datetime.now(timezone.utc)
         if self._prop_nouvelles is not None:
@@ -2409,6 +3137,7 @@ class App(tk.Tk):
             self.integrer_donnees(res)
         if time.time() - self._prop_derniere > PERIODE_DONNEES:
             self.lancer_maj_donnees()
+        self.tick_dx(now)
         if now.second != self._derniere_seconde:
             self._derniere_seconde = now.second
             sol = soleil(now)
