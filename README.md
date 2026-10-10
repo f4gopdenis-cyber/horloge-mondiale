@@ -47,6 +47,11 @@ country time zones, greyline map and live HF propagation conditions.
 - **Mode and skimmer filters** (new in 2.0): All / CW / Digi / Phone, and CW Skimmer (RBN) spots
   shown, hidden or limited to ≥ 10 dB.
 - **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens.
+- **Quick QSO logging** (new in 2.2): selecting a spot pre-fills call, frequency, mode and
+  reports; press Enter to log. QSOs are appended to an ADIF file (set in ⚙ Settings) that your
+  logger can import automatically (e.g. OpsLog's "ADIF monitor"). The spot's NEW/BAND tag is
+  updated at once. Optional direct upload to the **QRZ.com logbook** (API key, QRZ subscription
+  required).
 - **Compact mode**: small always-on-top UTC strip you can move anywhere.
 - **Start with Windows** (option in the settings).
 

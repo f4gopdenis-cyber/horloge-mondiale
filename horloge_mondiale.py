@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.1"
+VERSION = "2.2"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -824,6 +824,45 @@ TEXTES = {
     "termine": ("terminé", "finished", "terminado", "beendet", "terminato", "encerrado"),
     "taille": ("Taille d'affichage", "Display size", "Tamaño de pantalla", "Anzeigegröße",
                "Dimensione display", "Tamanho da exibição"),
+    "rst_env": ("Env.", "Sent", "Env.", "Ges.", "Inv.", "Env."),
+    "rst_rec": ("Reçu", "Rcvd", "Rec.", "Empf.", "Ric.", "Rec."),
+    "enregistrer_qso": ("Enregistrer le QSO", "Log QSO", "Registrar QSO", "QSO loggen",
+                        "Registra QSO", "Registrar QSO"),
+    "qso_ok": ("QSO avec {c} enregistré ({h} UTC)", "QSO with {c} logged ({h} UTC)",
+               "QSO con {c} registrado ({h} UTC)", "QSO mit {c} geloggt ({h} UTC)",
+               "QSO con {c} registrato ({h} UTC)", "QSO com {c} registrado ({h} UTC)"),
+    "qso_err": ("Impossible d'écrire le QSO : {e}", "Could not write the QSO: {e}",
+                "No se pudo escribir el QSO: {e}", "QSO konnte nicht geschrieben werden: {e}",
+                "Impossibile scrivere il QSO: {e}", "Não foi possível gravar o QSO: {e}"),
+    "qso_vide": ("Indique un indicatif", "Enter a callsign", "Indica un indicativo",
+                 "Rufzeichen eingeben", "Inserisci un nominativo", "Informe um indicativo"),
+    "fichier_qso": ("Fichier ADIF des QSO", "QSO ADIF file", "Archivo ADIF de QSO",
+                    "ADIF-Datei der QSOs", "File ADIF dei QSO", "Arquivo ADIF dos QSOs"),
+    "fichier_qso_aide": ("À surveiller par le « Moniteur ADIF » d'OpsLog (ou l'import auto de ton log)",
+                         "Watch it with OpsLog's “ADIF monitor” (or your logger's auto-import)",
+                         "Vigílalo con el «Monitor ADIF» de OpsLog (o la importación auto de tu log)",
+                         "Mit dem „ADIF-Monitor“ von OpsLog überwachen (oder Auto-Import deines Logs)",
+                         "Da sorvegliare con il «Monitor ADIF» di OpsLog (o l'import auto del log)",
+                         "Monitore com o «Monitor ADIF» do OpsLog (ou a importação auto do log)"),
+    "qrz_envoyer": ("Envoyer chaque QSO sur QRZ.com", "Upload each QSO to QRZ.com",
+                    "Enviar cada QSO a QRZ.com", "Jedes QSO zu QRZ.com hochladen",
+                    "Invia ogni QSO a QRZ.com", "Enviar cada QSO ao QRZ.com"),
+    "qrz_aide": ("Clé API du logbook QRZ (Logbook → Settings → API). Abonnement QRZ requis.\n"
+                 "Si ton logiciel de log envoie déjà sur QRZ, laisse cette option désactivée.",
+                 "QRZ logbook API key (Logbook → Settings → API). QRZ subscription required.\n"
+                 "If your logger already uploads to QRZ, leave this off.",
+                 "Clave API del logbook QRZ (Logbook → Settings → API). Requiere suscripción QRZ.\n"
+                 "Si tu programa de log ya sube a QRZ, deja esta opción desactivada.",
+                 "API-Schlüssel des QRZ-Logbuchs (Logbook → Settings → API). QRZ-Abo erforderlich.\n"
+                 "Wenn dein Logprogramm schon zu QRZ hochlädt, diese Option aus lassen.",
+                 "Chiave API del logbook QRZ (Logbook → Settings → API). Abbonamento QRZ richiesto.\n"
+                 "Se il tuo programma di log carica già su QRZ, lascia l'opzione disattivata.",
+                 "Chave API do logbook QRZ (Logbook → Settings → API). Assinatura QRZ necessária.\n"
+                 "Se seu programa de log já envia ao QRZ, deixe esta opção desativada."),
+    "qrz_auth": ("QRZ : clé refusée ou abonnement requis", "QRZ: key refused or subscription required",
+                 "QRZ: clave rechazada o suscripción requerida", "QRZ: Schlüssel abgelehnt oder Abo erforderlich",
+                 "QRZ: chiave rifiutata o abbonamento richiesto", "QRZ: chave recusada ou assinatura necessária"),
+    "qrz_err": ("QRZ : {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}"),
     "tester": ("Tester", "Test", "Probar", "Testen", "Prova", "Testar"),
     "toast_new": ("Nouveau pays !", "New one!", "¡País nuevo!", "Neues Gebiet!", "Paese nuovo!",
                   "Entidade nova!"),
@@ -1948,6 +1987,54 @@ def fenetres_eme(qth1, qth2, debut_utc, hmin=0.0, heures=48, pas=5):
 # ---------------------------------------------------------------- log ADIF
 BANDES_ADIF = {"160M": "160", "80M": "80", "60M": "60", "40M": "40", "30M": "30", "20M": "20",
                "17M": "17", "15M": "15", "12M": "12", "10M": "10", "6M": "6", "4M": "4", "2M": "2"}
+
+
+def fichier_qso_defaut():
+    docs = os.path.join(os.path.expanduser("~"), "Documents")
+    return os.path.join(docs if os.path.isdir(docs) else os.path.expanduser("~"),
+                        "HorlogeMondiale_QSO.adi")
+
+
+MODES_QSO = ("CW", "SSB", "FT8", "FT4", "RTTY", "FM")
+
+
+def champ_adif(nom, valeur):
+    valeur = str(valeur)
+    return f"<{nom}:{len(valeur)}>{valeur} " if valeur else ""
+
+
+def ecrire_qso_adif(chemin, qso):
+    """Ajoute un QSO (dict) à un fichier ADIF ; crée l'en-tête si besoin."""
+    nouveau = not os.path.exists(chemin) or os.path.getsize(chemin) == 0
+    with open(chemin, "a", encoding="utf-8", newline="\r\n") as f:
+        if nouveau:
+            f.write(f"Horloge mondiale {VERSION} - QSO\n"
+                    + champ_adif("ADIF_VER", "3.1.4") + champ_adif("PROGRAMID", "HorlogeMondiale")
+                    + champ_adif("PROGRAMVERSION", VERSION) + "<EOH>\n\n")
+        ligne = "".join(champ_adif(k, v) for k, v in qso.items())
+        f.write(ligne + "<EOR>\n")
+
+
+URL_QRZ_LOGBOOK = "https://logbook.qrz.com/api"
+
+
+def envoyer_qrz(cle, qso, indicatif=""):
+    """Envoie un QSO au logbook QRZ.com (API officielle, abonnement requis).
+    Renvoie (ok, message)."""
+    from urllib.parse import urlencode, parse_qs
+    adif = "".join(champ_adif(k, v) for k, v in qso.items()) + "<eor>"
+    data = urlencode({"KEY": cle, "ACTION": "INSERT", "ADIF": adif}).encode()
+    agent = f"HorlogeMondiale/{VERSION}" + (f" ({indicatif})" if indicatif else "")
+    req = urllib.request.Request(URL_QRZ_LOGBOOK, data=data, headers={"User-Agent": agent[:128]})
+    with urllib.request.urlopen(req, timeout=15) as rep:
+        texte = rep.read().decode("utf-8", "replace")
+    res = {k: v[0] for k, v in parse_qs(texte).items()}
+    journal(f"QRZ logbook : {texte[:150]!r}")
+    if res.get("RESULT") in ("OK", "REPLACE"):
+        return True, res.get("LOGID") or res.get("LOGIDS") or ""
+    if res.get("RESULT") == "AUTH":
+        return False, "AUTH"
+    return False, res.get("REASON", texte[:80])
 
 
 def lire_adif(chemin):
@@ -3348,7 +3435,7 @@ class App(tk.Tk):
             tk.Label(self.tab_spots, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                      width=w, anchor="w").grid(row=0, column=j, sticky="w")
         self.lignes_spots = []
-        for i in range(15):
+        for i in range(12):
             ligne = []
             for j, w in enumerate(largeurs):
                 l = tk.Label(self.tab_spots, text="", width=w, anchor="w", bg=PANNEAU,
@@ -3368,6 +3455,7 @@ class App(tk.Tk):
         self.b_tourner = self.bouton(actions, T("tourner"), lambda: self.agir_spot(rotor=True))
         self.l_action = tk.Label(actions, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                                  anchor="w", wraplength=260, justify="left")
+        self.construire_saisie_qso(self.f_spots)
 
         # vue Activité
         self.f_activite = tk.Frame(droite, bg=PANNEAU)
@@ -3570,10 +3658,133 @@ class App(tk.Tk):
         self.afficher_detail_spot()
         self.maj_boutons_action()
 
+    # ---- saisie de QSO
+    def construire_saisie_qso(self, parent):
+        cadre = tk.Frame(parent, bg=PANNEAU2, padx=8, pady=6)
+        cadre.pack(fill="x", pady=(8, 0))
+        l1 = tk.Frame(cadre, bg=PANNEAU2)
+        l1.pack(fill="x")
+        tk.Label(l1, text="QSO", font=F("titre", 9, "bold"), fg=ACCENT, bg=PANNEAU2).pack(side="left")
+        self.e_qso_call = style_entree(tk.Entry(l1, width=11, font=F("mono", 11, "bold")))
+        self.e_qso_call.pack(side="left", padx=(8, 0), ipady=2)
+        self.e_qso_khz = style_entree(tk.Entry(l1, width=9))
+        self.e_qso_khz.pack(side="left", padx=(6, 0), ipady=2)
+        tk.Label(l1, text="kHz", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU2).pack(side="left", padx=(3, 0))
+        self.seg_qso_mode = Segments(l1, [(m, m) for m in MODES_QSO], self.choisir_mode_qso)
+        for lab in self.seg_qso_mode.items.values():
+            lab.configure(padx=4, font=F("txt", 8))
+        self.seg_qso_mode.pack(side="right")
+        l2 = tk.Frame(cadre, bg=PANNEAU2)
+        l2.pack(fill="x", pady=(5, 0))
+        tk.Label(l2, text=T("rst_env"), font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU2).pack(side="left")
+        self.e_qso_rs = style_entree(tk.Entry(l2, width=4))
+        self.e_qso_rs.pack(side="left", padx=(3, 8), ipady=2)
+        tk.Label(l2, text=T("rst_rec"), font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU2).pack(side="left")
+        self.e_qso_rr = style_entree(tk.Entry(l2, width=4))
+        self.e_qso_rr.pack(side="left", padx=(3, 8), ipady=2)
+        self.e_qso_comm = style_entree(tk.Entry(l2, width=18))
+        self.e_qso_comm.pack(side="left", fill="x", expand=True, ipady=2)
+        l3 = tk.Frame(cadre, bg=PANNEAU2)
+        l3.pack(fill="x", pady=(6, 0))
+        self.bouton(l3, "✔ " + T("enregistrer_qso"), self.enregistrer_qso, primaire=True).pack(side="left")
+        self.l_qso = tk.Label(l3, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU2, anchor="w")
+        self.l_qso.pack(side="left", padx=(10, 0))
+        for e in (self.e_qso_call, self.e_qso_khz, self.e_qso_rs, self.e_qso_rr, self.e_qso_comm):
+            e.bind("<Return>", lambda ev: self.enregistrer_qso())
+            e.bind("<Escape>", lambda ev: self.vider_qso())
+        self.mode_qso = "CW"
+        self.choisir_mode_qso("CW")
+        self._retours_qso = []
+
+    def choisir_mode_qso(self, m, forcer=False):
+        ancien = getattr(self, "mode_qso", None)
+        self.mode_qso = m
+        self.seg_qso_mode.choisir(m)
+        rst = "599" if m in ("CW", "RTTY") else ("59" if m in ("SSB", "FM") else "-10")
+        defauts = ("599", "59", "-10", "")
+        for e in (self.e_qso_rs, self.e_qso_rr):
+            if forcer or ancien is None or e.get().strip() in defauts:
+                e.delete(0, "end")
+                e.insert(0, rst)
+
+    def preremplir_qso(self, s):
+        self.vider_qso(garder_message=True)
+        self.e_qso_call.insert(0, s["call"])
+        self.e_qso_khz.insert(0, f"{s['khz']:.1f}")
+        m = s["mode"]
+        self.choisir_mode_qso("FT8" if m in ("DIGI", "PSK", "JT65", "SSTV") else (m if m in MODES_QSO else
+                              ("CW" if classe_mode(m) == "cw" else "SSB")))
+
+    def vider_qso(self, garder_message=False):
+        for e in (self.e_qso_call, self.e_qso_khz, self.e_qso_comm):
+            e.delete(0, "end")
+        self.choisir_mode_qso(self.mode_qso, forcer=True)
+        if not garder_message:
+            self.l_qso.configure(text="")
+
+    def enregistrer_qso(self):
+        call = self.e_qso_call.get().strip().upper()
+        if not call:
+            self.l_qso.configure(text=T("qso_vide"), fg=ORANGE)
+            return
+        try:
+            khz = float(self.e_qso_khz.get().replace(",", ".").strip())
+            if 0 < khz < 1000:  # saisi en MHz (ex. 14.025)
+                khz *= 1000
+        except ValueError:
+            khz = None
+        maintenant = datetime.now(timezone.utc)
+        bande = bande_de(khz) if khz else None
+        qso = {"CALL": call, "QSO_DATE": maintenant.strftime("%Y%m%d"),
+               "TIME_ON": maintenant.strftime("%H%M%S"),
+               "BAND": (bande + "M") if bande else "",
+               "FREQ": f"{khz / 1000:.6f}" if khz else "",
+               "MODE": self.mode_qso,
+               "RST_SENT": self.e_qso_rs.get().strip(), "RST_RCVD": self.e_qso_rr.get().strip(),
+               "STATION_CALLSIGN": (self.cfg.get("indicatif") or "").upper(),
+               "MY_GRIDSQUARE": (self.cfg.get("locator") or "").upper(),
+               "COMMENT": self.e_qso_comm.get().strip()}
+        if self.mode_qso in ("FT8", "FT4"):
+            qso["MODE"], qso["SUBMODE"] = ("FT8", "") if self.mode_qso == "FT8" else ("MFSK", "FT4")
+        chemin = self.cfg.get("fichier_qso") or fichier_qso_defaut()
+        try:
+            ecrire_qso_adif(chemin, qso)
+        except Exception as ex:
+            self.l_qso.configure(text=T("qso_err", e=ex), fg=ORANGE)
+            journal(f"écriture QSO impossible : {ex!r}")
+            return
+        journal(f"QSO enregistré : {call} {khz} {self.mode_qso} -> {chemin}")
+        # le pays n'est plus « NEW » sur cette bande
+        e = self.cty.chercher(call) if self.cty else None
+        if e and bande and self.dxcc_faits is not None:
+            self.dxcc_faits.setdefault(e[0], set()).add(bande)
+        self.vider_qso(garder_message=True)
+        self.l_qso.configure(text=T("qso_ok", c=call, h=maintenant.strftime("%H:%M")), fg=VERT)
+        cle = (self.cfg.get("qrz_cle") or "").strip()
+        if self.cfg.get("qrz_actif") and cle:
+            message_local = self.l_qso.cget("text")
+
+            def travail():
+                try:
+                    ok, info = envoyer_qrz(cle, {k: v for k, v in qso.items() if v},
+                                           self.cfg.get("indicatif", ""))
+                except Exception as ex:
+                    ok, info = False, repr(ex)
+                if ok:
+                    self._retours_qso.append((message_local + "  ·  QRZ ✓", VERT))
+                else:
+                    self._retours_qso.append((message_local + "  ·  " + (
+                        T("qrz_auth") if info == "AUTH" else T("qrz_err", e=info)), ORANGE))
+            threading.Thread(target=travail, daemon=True).start()
+        self.maj_liste_spots()
+        self.e_qso_call.focus_set()
+
     def choisir_spot(self, k):
         if k < len(self.spots_affiches):
             s = self.spots_affiches[k]
             self.spot_choisi = None if s is self.spot_choisi else s
+            if self.spot_choisi is not None:
+                self.preremplir_qso(s)
             self.l_action.configure(text="")
             self.maj_liste_spots()
             self.dessiner_spots_az()
@@ -3597,6 +3808,7 @@ class App(tk.Tk):
     def double_clic_spot(self, k):
         if k < len(self.spots_affiches):
             self.spot_choisi = self.spots_affiches[k]
+            self.preremplir_qso(self.spot_choisi)
             self.maj_liste_spots()
             self.dessiner_spots_az()
             if self.cfg.get("dblclic", True):
@@ -3610,6 +3822,7 @@ class App(tk.Tk):
                 x, y = self.az_xy(s["lat"], s["lon"])
                 if abs(x - e.x) <= 7 and abs(y - e.y) <= 7:
                     self.spot_choisi = s
+                    self.preremplir_qso(s)
                     self.maj_liste_spots()
                     self.dessiner_spots_az()
                     if self.cfg.get("dblclic", True):
@@ -4461,6 +4674,9 @@ class App(tk.Tk):
             self.cfg["indicatif"] = e_ind.get().strip().upper()
             self.cfg["locator"] = loc
             self.cfg["clusters"] = liste_clusters(e_clu.get()) or list(CLUSTERS_SECOURS[:5])
+            self.cfg["fichier_qso"] = e_qf.get().strip() or fichier_qso_defaut()
+            self.cfg["qrz_cle"] = e_qrz.get().strip()
+            self.cfg["qrz_actif"] = v_qrz.get()
             self.cfg["rig"] = e_rig.get().strip() or RIG_DEFAUT
             self.cfg["rig_actif"] = v_rig.get()
             if choix_rotor["type"] in adresses:
@@ -4502,6 +4718,35 @@ class App(tk.Tk):
                 self.dessiner_az()
                 self.maj_liste_spots()
 
+        etiquette(T("fichier_qso"), 13)
+        ligne_q = tk.Frame(d, bg=FOND)
+        ligne_q.grid(row=13, column=1, sticky="w", pady=(10, 0))
+        e_qf = style_entree(tk.Entry(ligne_q, width=44))
+        e_qf.insert(0, self.cfg.get("fichier_qso") or fichier_qso_defaut())
+        e_qf.pack(side="left", ipady=3)
+
+        def parcourir():
+            from tkinter import filedialog
+            f = filedialog.asksaveasfilename(parent=d, defaultextension=".adi",
+                                             initialfile=os.path.basename(e_qf.get()),
+                                             initialdir=os.path.dirname(e_qf.get()),
+                                             filetypes=[("ADIF", "*.adi *.adif")])
+            if f:
+                e_qf.delete(0, "end")
+                e_qf.insert(0, f)
+        self.bouton(ligne_q, "…", parcourir).pack(side="left", padx=(6, 0))
+        tk.Label(d, text=T("fichier_qso_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
+            row=14, column=1, sticky="w")
+        etiquette("QRZ.com", 16)
+        ligne_z = tk.Frame(d, bg=FOND)
+        ligne_z.grid(row=16, column=1, sticky="w", pady=(10, 0))
+        e_qrz = style_entree(tk.Entry(ligne_z, width=26, show="•"))
+        e_qrz.insert(0, self.cfg.get("qrz_cle", ""))
+        e_qrz.pack(side="left", ipady=3)
+        v_qrz = tk.BooleanVar(value=self.cfg.get("qrz_actif", False))
+        Bascule(ligne_z, T("qrz_envoyer"), v_qrz).pack(side="left", padx=(10, 0))
+        tk.Label(d, text=T("qrz_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8),
+                 justify="left").grid(row=17, column=1, sticky="w")
         etiquette(T("taille"), 11)
         choix_taille = {"t": str(self.cfg.get("taille", "100"))}
         seg_t = Segments(d, [("100", "100 %"), ("125", "125 %"), ("150", "150 %")],
@@ -4511,7 +4756,7 @@ class App(tk.Tk):
         seg_t.grid(row=11, column=1, sticky="w", pady=(10, 0))
         seg_t.choisir(choix_taille["t"])
         self.bouton(d, T("enregistrer"), valider, primaire=True).grid(
-            row=12, column=1, sticky="e", pady=(16, 0))
+            row=18, column=1, sticky="e", pady=(16, 0))
         d.bind("<Return>", lambda e: valider())
         e_ind.focus_set()
 
@@ -4564,6 +4809,9 @@ class App(tk.Tk):
                 self.dessiner_courbes_eme()
         if self._retours_action and self.vue == "dx":
             self.maj_boutons_action()
+        if self._retours_qso:
+            texte, coul = self._retours_qso.pop(0)
+            self.l_qso.configure(text=texte, fg=coul)
         nouveaux = [sp for c in self.clusters for sp in c.prendre()]
         if nouveaux:
             self.integrer_spots(nouveaux)
