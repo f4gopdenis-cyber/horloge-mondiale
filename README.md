@@ -35,8 +35,10 @@ country time zones, greyline map and live HF propagation conditions.
 
 ### Easiest: the executable
 
-Download `HorlogeMondiale.exe` from the **Releases** page and run it.
-Nothing else to install.
+**[⬇ Download HorlogeMondiale.exe](https://github.com/f4gopdenis-cyber/horloge-mondiale/releases/latest/download/HorlogeMondiale.exe)**
+(latest version), then run it. Nothing else to install.
+
+All versions: [Releases page](https://github.com/f4gopdenis-cyber/horloge-mondiale/releases)
 
 > **Note:** on first launch, Windows may show "Windows protected your PC"
 > (SmartScreen) because the executable is not code-signed. Click **More info**, then
