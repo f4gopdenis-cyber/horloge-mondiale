@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.4"
+VERSION = "2.5"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -3556,22 +3556,21 @@ class App(tk.Tk):
         self.construire_saisie_qso(self.f_spots)
         self.tab_spots = tk.Frame(self.f_spots, bg=PANNEAU)
         entetes = ("UTC", "kHz", T("col_call"), "", T("col_pays"), "km", "Az")
-        largeurs = (5, 8, 11, 5, 13, 6, 4)
-        for j, (txt, w) in enumerate(zip(entetes, largeurs)):
+        self.largeurs_spots = (5, 8, 11, 5, 13, 6, 4)
+        for j, (txt, w) in enumerate(zip(entetes, self.largeurs_spots)):
             tk.Label(self.tab_spots, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                      width=w, anchor="w").grid(row=0, column=j, sticky="w")
+        # 12 lignes au minimum ; la liste s'allonge pour remplir la hauteur disponible
+        # (fenêtre agrandie, plein écran) — voir ajuster_lignes_spots
         self.lignes_spots = []
+        self.nb_lignes_spots = 12
         for i in range(12):
-            ligne = []
-            for j, w in enumerate(largeurs):
-                l = tk.Label(self.tab_spots, text="", width=w, anchor="w", bg=PANNEAU,
-                             fg=TEXTE, cursor="hand2",
-                             font=F("mono", 9, "bold") if j == 2 else F("mono", 9))
-                l.grid(row=i + 1, column=j, sticky="w", pady=0)
-                l.bind("<Button-1>", lambda e, k=i: self.choisir_spot(k))
-                l.bind("<Double-Button-1>", lambda e, k=i: self.double_clic_spot(k))
-                ligne.append(l)
-            self.lignes_spots.append(ligne)
+            self.creer_ligne_spot()
+        self.tab_spots.update_idletasks()
+        self.tab_spots.configure(width=self.tab_spots.winfo_reqwidth(),
+                                 height=self.tab_spots.winfo_reqheight())
+        self.tab_spots.grid_propagate(False)
+        self.tab_spots.bind("<Configure>", lambda e: self.ajuster_lignes_spots(e.height))
         self.l_spot_detail = tk.Label(self.f_spots, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
                                       anchor="w", justify="left", wraplength=400)
         actions = tk.Frame(self.f_spots, bg=PANNEAU)
@@ -3752,12 +3751,43 @@ class App(tk.Tk):
             return T("dx_erreur", h=serveur if n == 1 else f"{n} clusters"), ORANGE
         return T("dx_connexion", h=serveur if n == 1 else f"{n} clusters"), TEXTE_DIM
 
+    def creer_ligne_spot(self):
+        i = len(self.lignes_spots)
+        ligne = []
+        for j, w in enumerate(self.largeurs_spots):
+            l = tk.Label(self.tab_spots, text="", width=w, anchor="w", bg=PANNEAU,
+                         fg=TEXTE, cursor="hand2",
+                         font=F("mono", 9, "bold") if j == 2 else F("mono", 9))
+            l.grid(row=i + 1, column=j, sticky="w", pady=0)
+            l.bind("<Button-1>", lambda e, k=i: self.choisir_spot(k))
+            l.bind("<Double-Button-1>", lambda e, k=i: self.double_clic_spot(k))
+            ligne.append(l)
+        self.lignes_spots.append(ligne)
+
+    def ajuster_lignes_spots(self, hauteur):
+        """Autant de lignes de spots que la hauteur de la liste le permet."""
+        haut_ligne = max(1, self.lignes_spots[0][2].winfo_reqheight())
+        entete = self.tab_spots.grid_slaves(row=0, column=0)[0].winfo_reqheight()
+        n = max(5, (hauteur - entete) // haut_ligne)
+        if n == self.nb_lignes_spots:
+            return
+        while len(self.lignes_spots) < n:
+            self.creer_ligne_spot()
+        for i, ligne in enumerate(self.lignes_spots):
+            for l in ligne:
+                if i < n:
+                    l.grid()
+                else:
+                    l.grid_remove()
+        self.nb_lignes_spots = n
+        self.maj_liste_spots()
+
     def maj_liste_spots(self):
         txt, coul = self.etat_cluster_txt()
         self.l_cluster.configure(text=txt, fg=coul)
         spots = self.spots_visibles()
-        self.spots_affiches = spots[:len(self.lignes_spots)]
-        for i, ligne in enumerate(self.lignes_spots):
+        self.spots_affiches = spots[:self.nb_lignes_spots]
+        for i, ligne in enumerate(self.lignes_spots[:self.nb_lignes_spots]):
             if i < len(self.spots_affiches):
                 s = self.spots_affiches[i]
                 st = self.statut_spot(s)
