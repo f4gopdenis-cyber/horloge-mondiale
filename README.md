@@ -28,12 +28,22 @@ country time zones, greyline map and live HF propagation conditions.
   shown on the maps and in a list with frequency, country, distance and bearing; band filter.
 - **Azimuthal map centred on your QTH** (new in 1.3): true bearing and distance to every spot
   and country, distance rings, greyline. Click a spot to draw its great-circle path.
+- **DX alerts** (new in 1.5): sound and pop-up when a watched callsign, prefix or country is
+  spotted, or a DXCC entity you have never worked (or a new band) shows up.
+- **Missing entities from your log** (new in 1.5): import your ADIF log; spots are tagged
+  **NEW** (never worked) or **BAND** (new band). The log is re-read automatically when your
+  logging software updates it.
+- **Moon / EME** (new in 1.5): Moon phase, elevation and azimuth at your QTH, moonrise/set,
+  distance; common EME windows with another locator over 48 h, with a 24 h elevation chart.
+- **Update notice** (new in 1.5): a banner appears when a new version is published on GitHub.
 - **Compact mode**: small always-on-top UTC strip you can move anywhere.
 - **Start with Windows** (option in the settings).
 
 ![Map view](map.png)
 
 ![DX view](dx.png)
+
+![Moon / EME view](moon.png)
 
 *Screenshot taken with simulated propagation data.*
 

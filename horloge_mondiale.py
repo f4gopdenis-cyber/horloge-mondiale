@@ -41,10 +41,16 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "1.4"
+VERSION = "1.5"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
+URL_API_RELEASE = "https://api.github.com/repos/f4gopdenis-cyber/horloge-mondiale/releases/latest"
+URL_RELEASES = URL_GITHUB + "/releases/latest"
+
+
+def version_tuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v or "")) or (0,)
 CONFIG = os.path.join(os.path.expanduser("~"), "horloge_mondiale.json")
 GELE = getattr(sys, "frozen", False)  # True dans l'exécutable PyInstaller
 
@@ -741,6 +747,111 @@ TEXTES = {
                     "DXCC-Präfixtabelle (cty.dat) nicht verfügbar: Spots nicht auf den Karten",
                     "Tabella prefissi DXCC (cty.dat) non disponibile: spot non mostrati sulle mappe",
                     "Tabela de prefixos DXCC (cty.dat) indisponível: spots fora dos mapas"),
+    "vue_lune": ("Lune", "Moon", "Luna", "Mond", "Luna", "Lua"),
+    "maj_dispo": ("⬆ Nouvelle version {v} disponible", "⬆ New version {v} available",
+                  "⬆ Nueva versión {v} disponible", "⬆ Neue Version {v} verfügbar",
+                  "⬆ Nuova versione {v} disponibile", "⬆ Nova versão {v} disponível"),
+    "a_jour": ("à jour", "up to date", "actualizado", "aktuell", "aggiornato", "atualizado"),
+    "alertes": ("Alertes", "Alerts", "Alertas", "Alarme", "Avvisi", "Alertas"),
+    "alertes_liste": ("Indicatifs, préfixes ou pays à surveiller (séparés par des virgules)",
+                      "Callsigns, prefixes or countries to watch (comma-separated)",
+                      "Indicativos, prefijos o países a vigilar (separados por comas)",
+                      "Rufzeichen, Präfixe oder Länder (durch Kommas getrennt)",
+                      "Nominativi, prefissi o paesi da sorvegliare (separati da virgole)",
+                      "Indicativos, prefixos ou países a monitorar (separados por vírgulas)"),
+    "alerte_new": ("Alerter pour un pays DXCC jamais contacté", "Alert on a DXCC entity never worked",
+                   "Avisar de un país DXCC nunca trabajado", "Alarm bei nie gearbeitetem DXCC-Gebiet",
+                   "Avvisa per un paese DXCC mai collegato", "Alertar para entidade DXCC nunca contatada"),
+    "alerte_bande": ("Alerter pour un pays nouveau sur la bande",
+                     "Alert on a new band for a worked entity",
+                     "Avisar de banda nueva para un país trabajado",
+                     "Alarm bei neuem Band für gearbeitetes Gebiet",
+                     "Avvisa per una nuova banda di un paese già collegato",
+                     "Alertar para banda nova de entidade já contatada"),
+    "alerte_son": ("Son", "Sound", "Sonido", "Ton", "Suono", "Som"),
+    "alerte_bandes": ("Bandes surveillées", "Watched bands", "Bandas vigiladas", "Überwachte Bänder",
+                      "Bande sorvegliate", "Bandas monitoradas"),
+    "adif_importer": ("Importer le log ADIF…", "Import ADIF log…", "Importar log ADIF…",
+                      "ADIF-Log importieren…", "Importa log ADIF…", "Importar log ADIF…"),
+    "adif_resume": ("{n} QSO · {p} pays DXCC contactés", "{n} QSOs · {p} DXCC entities worked",
+                    "{n} QSO · {p} países DXCC trabajados", "{n} QSOs · {p} DXCC-Gebiete gearbeitet",
+                    "{n} QSO · {p} paesi DXCC collegati", "{n} QSOs · {p} entidades DXCC contatadas"),
+    "adif_aucun": ("Aucun log importé : importe ton fichier ADIF pour repérer les pays manquants.",
+                   "No log imported: import your ADIF file to spot missing entities.",
+                   "Ningún log importado: importa tu ADIF para ver los países que faltan.",
+                   "Kein Log importiert: ADIF-Datei importieren, um fehlende Gebiete zu sehen.",
+                   "Nessun log importato: importa il file ADIF per vedere i paesi mancanti.",
+                   "Nenhum log importado: importe seu ADIF para ver as entidades que faltam."),
+    "adif_auto": ("Le fichier est relu automatiquement quand ton logiciel de log le met à jour.",
+                  "The file is re-read automatically when your logging software updates it.",
+                  "El archivo se relee automáticamente cuando tu programa de log lo actualiza.",
+                  "Die Datei wird automatisch neu gelesen, wenn dein Logprogramm sie aktualisiert.",
+                  "Il file viene riletto automaticamente quando il tuo programma di log lo aggiorna.",
+                  "O arquivo é relido automaticamente quando seu programa de log o atualiza."),
+    "adif_attente": ("La table DXCC n'est pas encore chargée, réessaie dans un instant.",
+                     "The DXCC table is not loaded yet, try again in a moment.",
+                     "La tabla DXCC aún no está cargada, inténtalo de nuevo en un momento.",
+                     "Die DXCC-Tabelle ist noch nicht geladen, bitte gleich erneut versuchen.",
+                     "La tabella DXCC non è ancora caricata, riprova tra un attimo.",
+                     "A tabela DXCC ainda não foi carregada, tente novamente em instantes."),
+    "adif_erreur": ("Fichier ADIF illisible :\n{e}", "Could not read the ADIF file:\n{e}",
+                    "No se puede leer el archivo ADIF:\n{e}", "ADIF-Datei nicht lesbar:\n{e}",
+                    "Impossibile leggere il file ADIF:\n{e}", "Não foi possível ler o arquivo ADIF:\n{e}"),
+    "toast_new": ("Nouveau pays !", "New one!", "¡País nuevo!", "Neues Gebiet!", "Paese nuovo!",
+                  "Entidade nova!"),
+    "toast_bande": ("Nouvelle bande", "New band", "Banda nueva", "Neues Band", "Banda nuova",
+                    "Banda nova"),
+    "toast_liste": ("Station surveillée", "Watched station", "Estación vigilada", "Beobachtete Station",
+                    "Stazione sorvegliata", "Estação monitorada"),
+    "lune_titre": ("LUNE", "MOON", "LUNA", "MOND", "LUNA", "LUA"),
+    "lune_pos": ("hauteur {h}°  ·  azimut {a}°", "elevation {h}°  ·  azimuth {a}°",
+                 "elevación {h}°  ·  azimut {a}°", "Höhe {h}°  ·  Azimut {a}°",
+                 "elevazione {h}°  ·  azimut {a}°", "elevação {h}°  ·  azimute {a}°"),
+    "lune_illum": ("éclairée à {p} %  ·  âge {j} j", "{p}% illuminated  ·  age {j} d",
+                   "iluminada {p} %  ·  edad {j} d", "{p} % beleuchtet  ·  Alter {j} T",
+                   "illuminata al {p}%  ·  età {j} g", "{p}% iluminada  ·  idade {j} d"),
+    "lune_lever": ("↑ lever {l}     ↓ coucher {c}", "↑ moonrise {l}     ↓ moonset {c}",
+                   "↑ salida {l}     ↓ puesta {c}", "↑ Aufgang {l}     ↓ Untergang {c}",
+                   "↑ sorge {l}     ↓ tramonta {c}", "↑ nascer {l}     ↓ ocaso {c}"),
+    "lune_dist": ("distance {d}  ·  déclinaison {dec}°", "distance {d}  ·  declination {dec}°",
+                  "distancia {d}  ·  declinación {dec}°", "Entfernung {d}  ·  Deklination {dec}°",
+                  "distanza {d}  ·  declinazione {dec}°", "distância {d}  ·  declinação {dec}°"),
+    "phases": ("Nouvelle lune|Premier croissant|Premier quartier|Gibbeuse croissante|Pleine lune|"
+               "Gibbeuse décroissante|Dernier quartier|Dernier croissant",
+               "New moon|Waxing crescent|First quarter|Waxing gibbous|Full moon|"
+               "Waning gibbous|Last quarter|Waning crescent",
+               "Luna nueva|Luna creciente|Cuarto creciente|Gibosa creciente|Luna llena|"
+               "Gibosa menguante|Cuarto menguante|Luna menguante",
+               "Neumond|Zunehmende Sichel|Erstes Viertel|Zunehmender Mond|Vollmond|"
+               "Abnehmender Mond|Letztes Viertel|Abnehmende Sichel",
+               "Luna nuova|Falce crescente|Primo quarto|Gibbosa crescente|Luna piena|"
+               "Gibbosa calante|Ultimo quarto|Falce calante",
+               "Lua nova|Lua crescente|Quarto crescente|Crescente gibosa|Lua cheia|"
+               "Minguante gibosa|Quarto minguante|Lua minguante"),
+    "eme_titre": ("FENÊTRES EME (48 h)", "EME WINDOWS (48 h)", "VENTANAS EME (48 h)",
+                  "EME-FENSTER (48 h)", "FINESTRE EME (48 h)", "JANELAS EME (48 h)"),
+    "eme_locator": ("Locator du correspondant", "Other station's locator", "Locator del corresponsal",
+                    "Locator der Gegenstation", "Locator del corrispondente", "Locator do correspondente"),
+    "eme_min": ("Élévation mini", "Min. elevation", "Elevación mín.", "Mindesthöhe",
+                "Elevazione min.", "Elevação mín."),
+    "eme_calculer": ("Calculer", "Compute", "Calcular", "Berechnen", "Calcola", "Calcular"),
+    "eme_aucune": ("Aucune fenêtre commune dans les 48 h", "No common window in the next 48 h",
+                   "Sin ventana común en las próximas 48 h", "Kein gemeinsames Fenster in den nächsten 48 h",
+                   "Nessuna finestra comune nelle prossime 48 h", "Nenhuma janela comum nas próximas 48 h"),
+    "eme_aide": ("La Lune doit être au-dessus de l'élévation mini chez les deux stations.",
+                 "The Moon must be above the minimum elevation at both stations.",
+                 "La Luna debe estar por encima de la elevación mínima en ambas estaciones.",
+                 "Der Mond muss an beiden Stationen über der Mindesthöhe stehen.",
+                 "La Luna deve essere sopra l'elevazione minima in entrambe le stazioni.",
+                 "A Lua deve estar acima da elevação mínima nas duas estações."),
+    "eme_dx": ("Lune chez le correspondant : {h}°  ·  az {a}°",
+               "Moon at the other station: {h}°  ·  az {a}°",
+               "Luna en el corresponsal: {h}°  ·  az {a}°", "Mond bei der Gegenstation: {h}°  ·  Az {a}°",
+               "Luna dal corrispondente: {h}°  ·  az {a}°", "Lua no correspondente: {h}°  ·  az {a}°"),
+    "eme_courbe": ("Hauteur de la Lune sur 24 h (UTC)", "Moon elevation over 24 h (UTC)",
+                   "Elevación de la Luna en 24 h (UTC)", "Mondhöhe über 24 h (UTC)",
+                   "Elevazione della Luna in 24 h (UTC)", "Elevação da Lua em 24 h (UTC)"),
+    "en_cours": ("en cours", "now", "ahora", "jetzt", "in corso", "agora"),
     "a_propos": ("À propos", "About", "Acerca de", "Über", "Informazioni", "Sobre"),
     "version": ("Version {v}", "Version {v}", "Versión {v}", "Version {v}", "Versione {v}",
                 "Versão {v}"),
@@ -1555,6 +1666,161 @@ class ClientCluster(threading.Thread):
         return f
 
 
+# ---------------------------------------------------------------- Lune
+def lune(dt_utc):
+    """Position géocentrique de la Lune (méthode de P. Schlyter, précision ~0,1°).
+    Renvoie (ascension droite °, déclinaison °, distance en rayons terrestres,
+    longitude écliptique °, longitude écliptique du Soleil °)."""
+    d = dt_utc.timestamp() / 86400.0 + 2440587.5 - 2451543.5
+    rad, deg = math.radians, math.degrees
+    N = rad((125.1228 - 0.0529538083 * d) % 360)
+    i = rad(5.1454)
+    w = rad((318.0634 + 0.1643573223 * d) % 360)
+    a, e = 60.2666, 0.054900
+    M = rad((115.3654 + 13.0649929509 * d) % 360)
+    E = M + e * math.sin(M) * (1 + e * math.cos(M))
+    for _ in range(5):
+        E -= (E - e * math.sin(E) - M) / (1 - e * math.cos(E))
+    xv, yv = a * (math.cos(E) - e), a * math.sqrt(1 - e * e) * math.sin(E)
+    v, r = math.atan2(yv, xv), math.hypot(xv, yv)
+    xh = r * (math.cos(N) * math.cos(v + w) - math.sin(N) * math.sin(v + w) * math.cos(i))
+    yh = r * (math.sin(N) * math.cos(v + w) + math.cos(N) * math.sin(v + w) * math.cos(i))
+    zh = r * math.sin(v + w) * math.sin(i)
+    lon, lat = math.atan2(yh, xh), math.atan2(zh, math.hypot(xh, yh))
+    # perturbations principales
+    ws = rad((282.9404 + 4.70935e-5 * d) % 360)
+    Ms = rad((356.0470 + 0.9856002585 * d) % 360)
+    Ls, Lm = Ms + ws, M + w + N
+    D, F = Lm - Ls, Lm - N
+    s = math.sin
+    lon += rad(-1.274 * s(M - 2 * D) + 0.658 * s(2 * D) - 0.186 * s(Ms) - 0.059 * s(2 * M - 2 * D)
+               - 0.057 * s(M - 2 * D + Ms) + 0.053 * s(M + 2 * D) + 0.046 * s(2 * D - Ms)
+               + 0.041 * s(M - Ms) - 0.035 * s(D) - 0.031 * s(M + Ms) - 0.015 * s(2 * F - 2 * D)
+               + 0.011 * s(M - 4 * D))
+    lat += rad(-0.173 * s(F - 2 * D) - 0.055 * s(M - F - 2 * D) - 0.046 * s(M + F - 2 * D)
+               + 0.033 * s(F + 2 * D) + 0.017 * s(2 * M + F))
+    r += -0.58 * math.cos(M - 2 * D) - 0.46 * math.cos(2 * D)
+    # écliptique -> équateur
+    ecl = rad(23.4393 - 3.563e-7 * d)
+    x = math.cos(lon) * math.cos(lat)
+    y = math.sin(lon) * math.cos(lat)
+    z = math.sin(lat)
+    ye, ze = y * math.cos(ecl) - z * math.sin(ecl), y * math.sin(ecl) + z * math.cos(ecl)
+    ra, dec = math.atan2(ye, x), math.atan2(ze, math.hypot(x, ye))
+    # longitude du Soleil (même modèle que soleil())
+    n = d - 1.5
+    Lsol = (280.460 + 0.9856474 * n) % 360
+    g = rad((357.528 + 0.9856003 * n) % 360)
+    lsol = (Lsol + 1.915 * math.sin(g) + 0.020 * math.sin(2 * g)) % 360
+    return deg(ra) % 360, deg(dec), r, deg(lon) % 360, lsol
+
+
+def gmst_deg(dt_utc):
+    n = dt_utc.timestamp() / 86400.0 + 2440587.5 - 2451545.0
+    return (280.46061837 + 360.98564736629 * n) % 360
+
+
+def lune_locale(dt_utc, lat, lon, pos=None):
+    """Hauteur et azimut topocentriques de la Lune vus depuis (lat, lon), en degrés."""
+    ra, dec, r, _, _ = pos or lune(dt_utc)
+    ha = math.radians((gmst_deg(dt_utc) + lon - ra) % 360)
+    p, dc = math.radians(lat), math.radians(dec)
+    alt = math.asin(max(-1.0, min(1.0, math.sin(p) * math.sin(dc)
+                                  + math.cos(p) * math.cos(dc) * math.cos(ha))))
+    az = math.atan2(math.sin(ha), math.cos(ha) * math.sin(p) - math.tan(dc) * math.cos(p))
+    alt -= math.asin(math.cos(alt) / r)  # parallaxe (~1°)
+    return math.degrees(alt), (math.degrees(az) + 180) % 360
+
+
+def phase_lune(dt_utc, pos=None):
+    """(fraction éclairée 0-1, âge en jours, croissante ?, index de phase 0-7)."""
+    _, _, _, lm, ls = pos or lune(dt_utc)
+    elong = (lm - ls) % 360
+    k = (1 - math.cos(math.radians(elong))) / 2
+    return k, elong / 360 * 29.530588, elong < 180, int(((elong + 22.5) % 360) // 45)
+
+
+def lever_coucher_lune(lat, lon, debut_utc, heures=26):
+    """Prochains lever et coucher de la Lune (datetime UTC ou None) à partir de debut_utc."""
+    seuil = 0.125  # bord supérieur + réfraction, centre à ~ +0,13° topocentrique
+    lever = coucher = None
+    t0 = debut_utc
+    h0 = lune_locale(t0, lat, lon)[0] - seuil
+    for i in range(1, heures * 6 + 1):
+        t1 = debut_utc + timedelta(minutes=10 * i)
+        h1 = lune_locale(t1, lat, lon)[0] - seuil
+        if h0 < 0 <= h1 and lever is None:
+            lever = t0 + (t1 - t0) * (-h0 / (h1 - h0))
+        elif h0 >= 0 > h1 and coucher is None:
+            coucher = t0 + (t1 - t0) * (h0 / (h0 - h1))
+        if lever and coucher:
+            break
+        t0, h0 = t1, h1
+    return lever, coucher
+
+
+def fenetres_eme(qth1, qth2, debut_utc, hmin=0.0, heures=48, pas=5):
+    """Périodes où la Lune est à plus de hmin° chez les deux stations."""
+    fenetres, ouverte = [], None
+    for i in range(heures * 60 // pas + 1):
+        t = debut_utc + timedelta(minutes=pas * i)
+        pos = lune(t)
+        ok = (lune_locale(t, qth1[0], qth1[1], pos)[0] >= hmin
+              and lune_locale(t, qth2[0], qth2[1], pos)[0] >= hmin)
+        if ok and ouverte is None:
+            ouverte = t
+        elif not ok and ouverte is not None:
+            fenetres.append((ouverte, t))
+            ouverte = None
+    if ouverte is not None:
+        fenetres.append((ouverte, debut_utc + timedelta(hours=heures)))
+    return fenetres
+
+
+# ---------------------------------------------------------------- log ADIF
+BANDES_ADIF = {"160M": "160", "80M": "80", "60M": "60", "40M": "40", "30M": "30", "20M": "20",
+               "17M": "17", "15M": "15", "12M": "12", "10M": "10", "6M": "6", "4M": "4", "2M": "2"}
+
+
+def lire_adif(chemin):
+    """Lit un fichier ADIF -> liste de (indicatif, bande) ; la bande peut venir de FREQ."""
+    with open(chemin, "rb") as f:
+        texte = f.read().decode("utf-8", "replace")
+    m = re.search(r"<eoh>", texte, re.I)
+    if m:
+        texte = texte[m.end():]
+    qsos, rec, pos = [], {}, 0
+    balise = re.compile(r"<(?:(eor)|([A-Za-z0-9_]+):(\d+)(?::[A-Za-z])?)>", re.I)
+    while True:
+        pos = texte.find("<", pos)
+        if pos < 0:
+            break
+        m = balise.match(texte, pos)
+        if not m:
+            pos += 1
+            continue
+        if m.group(1):  # <eor>
+            if rec.get("CALL"):
+                qsos.append(rec)
+            rec, pos = {}, m.end()
+            continue
+        n = int(m.group(3))
+        rec[m.group(2).upper()] = texte[m.end():m.end() + n].strip()
+        pos = m.end() + n
+    if rec.get("CALL"):
+        qsos.append(rec)
+    resultat = []
+    for q in qsos:
+        bande = BANDES_ADIF.get(q.get("BAND", "").upper())
+        if bande is None and q.get("FREQ"):
+            try:
+                bande = bande_de(float(q["FREQ"]) * 1000)
+            except ValueError:
+                bande = None
+        resultat.append((q["CALL"].upper(), bande))
+    return resultat
+
+
 # ================================================================ interface
 POLICES = {"txt": "Segoe UI", "titre": "Segoe UI", "num": "Consolas", "mono": "Consolas"}
 
@@ -1844,6 +2110,13 @@ class App(tk.Tk):
             self.villes.append(v)
 
         self.spots = []
+        self.dxcc_faits = {}
+        self._alertes_faites = {}
+        self._toasts = []
+        self._maj_dispo = None
+        self._maj_derniere = 0
+        self._adif_verif = time.time()
+        self.charger_dxcc_faits()
         self.cty = TablePrefixes()
         self._cty_pret = None
         self.cluster = None
@@ -1852,18 +2125,21 @@ class App(tk.Tk):
         self.page_villes = tk.Frame(self, bg=FOND)
         self.page_carte = tk.Frame(self, bg=FOND)
         self.page_dx = tk.Frame(self, bg=FOND)
+        self.page_lune = tk.Frame(self, bg=FOND)
         self.construire_page_villes()
         self.construire_page_carte()
         self.construire_page_dx()
+        self.construire_page_lune()
         self.charger_table_cty()
         self.demarrer_cluster()
+        self.after(3000, self.verifier_maj)
 
         self.compact = None
         self.vue = None
         self._derniere_seconde = None
         self._derniere_minute_carte = None
         vue = self.cfg.get("vue", "villes")
-        self.afficher_vue(vue if vue in ("carte", "dx") else "villes")
+        self.afficher_vue(vue if vue in ("carte", "dx", "lune") else "villes")
         if vue == "compact":
             self.after(50, self.ouvrir_compact)
         self.protocol("WM_DELETE_WINDOW", self.quitter)
@@ -1917,7 +2193,7 @@ class App(tk.Tk):
             self.cluster.stop()
         try:  # annuler les minuteries en attente (utile lors d'une relance)
             for ident in self.tk.splitlist(self.tk.call("after", "info")):
-                self.after_cancel(ident)
+                self.tk.call("after", "cancel", ident)
         except tk.TclError:
             pass
         self.destroy()
@@ -1933,6 +2209,7 @@ class App(tk.Tk):
     def construire_entete(self):
         tete = tk.Frame(self, bg=FOND, padx=16)
         tete.pack(fill="x", pady=(14, 10))
+        self.tete = tete
 
         def bloc(col, titre, coul, sous_titre):
             cadre, f = self.panneau(tete, coul)
@@ -1988,10 +2265,14 @@ class App(tk.Tk):
         Bascule(barre, T("secondes"), self.secondes, self.basculer_secondes).pack(side="left")
         Bascule(barre, T("premier_plan"), self.premier_plan,
                 self.basculer_premier_plan).pack(side="left", padx=(18, 0))
+        self.l_maj = tk.Label(self, text="", font=F("titre", 9, "bold"), fg=FOND, bg=ACCENT,
+                              pady=3, cursor="hand2")
+        self.l_maj.bind("<Button-1>", lambda e: webbrowser.open(URL_RELEASES))
         self.bouton(barre, "ⓘ", self.dialogue_a_propos).pack(side="right", padx=(6, 0))
         self.bouton(barre, "⚙  " + T("reglages"), self.dialogue_reglages).pack(side="right")
         self.segments = Segments(barre, (("villes", T("vue_pays")), ("carte", T("vue_carte")),
-                                         ("dx", T("vue_dx")), ("compact", T("vue_compact"))),
+                                         ("dx", T("vue_dx")), ("lune", T("vue_lune")),
+                                         ("compact", T("vue_compact"))),
                                  self.afficher_vue)
         self.segments.pack(side="right", padx=(0, 10))
 
@@ -2007,10 +2288,10 @@ class App(tk.Tk):
         if vue == "compact":
             self.ouvrir_compact()
             return
-        for page in (self.page_villes, self.page_carte, self.page_dx):
+        for page in (self.page_villes, self.page_carte, self.page_dx, self.page_lune):
             page.pack_forget()
-        {"carte": self.page_carte, "dx": self.page_dx}.get(vue, self.page_villes).pack(
-            fill="both", expand=True)
+        {"carte": self.page_carte, "dx": self.page_dx, "lune": self.page_lune}.get(
+            vue, self.page_villes).pack(fill="both", expand=True)
         self.segments.choisir(vue)
         self.vue = vue
         self.cfg["vue"] = vue
@@ -2020,6 +2301,11 @@ class App(tk.Tk):
         elif vue == "dx":
             self.dessiner_az()
             self.maj_liste_spots()
+        elif vue == "lune":
+            if self._eme is None and self.cfg.get("eme_locator") and self.qth:
+                self.calculer_eme()
+            self.maj_lune()
+            self.dessiner_courbes_eme()
 
     # ------------------------------------------------------------ page pays
     def construire_page_villes(self):
@@ -2454,6 +2740,12 @@ class App(tk.Tk):
                 x, y = self.xy(v["lat"], v["lon"])
                 cv.create_oval(x - 3, y - 3, x + 3, y + 3, fill=TEXTE,
                                outline="#000000", tags="ov")
+        # lune (point sous-lunaire)
+        ra, dec, _, _, _ = lune(datetime.now(timezone.utc))
+        lon_l = (ra - gmst_deg(datetime.now(timezone.utc)) + 180) % 360 - 180
+        x, y = self.xy(dec, lon_l)
+        cv.create_oval(x - 7, y - 7, x + 7, y + 7, fill="#d8d2b8", outline="#ffffff", tags="ov")
+        cv.create_oval(x - 3, y - 7, x + 11, y + 7, fill="#09111c", outline="", tags="ov")
         # soleil
         x, y = self.xy(math.degrees(decl), sublon)
         cv.create_oval(x - 9, y - 9, x + 9, y + 9, fill="#ffd54a", outline="#fff3b0",
@@ -2620,6 +2912,7 @@ class App(tk.Tk):
 
     def integrer_spots(self, bruts):
         maintenant = datetime.now(timezone.utc)
+        ajoutes = []
         for spotter, khz, call, comm, hhmm in bruts:
             bande = bande_de(khz)
             if not bande:
@@ -2631,6 +2924,7 @@ class App(tk.Tk):
             sp = {"t": t, "khz": khz, "call": call, "spotter": spotter, "comm": comm,
                   "bande": bande, "mode": mode_de(khz, comm)}
             self.localiser_spot(sp)
+            ajoutes.append(sp)
             # même station sur la même bande : on garde le plus récent
             self.spots = [s for s in self.spots
                           if not (s["call"] == call and s["bande"] == bande)]
@@ -2638,6 +2932,7 @@ class App(tk.Tk):
         limite = maintenant - timedelta(seconds=DUREE_SPOT)
         self.spots = [s for s in self.spots if s["t"] >= limite][-300:]
         self.spots.sort(key=lambda s: s["t"], reverse=True)
+        self.verifier_alertes(ajoutes)
 
     def spots_visibles(self):
         f = self.cfg.get("filtre_bande", "tous")
@@ -2685,16 +2980,19 @@ class App(tk.Tk):
         self.l_cluster.pack(side="right")
 
         filtres = [("tous", T("dx_tous"))] + [(b, b) for b in FILTRES_BANDES]
-        self.seg_bandes = Segments(droite, filtres, self.choisir_bande)
+        ligne_f = tk.Frame(droite, bg=PANNEAU)
+        ligne_f.pack(fill="x", pady=(8, 6))
+        self.seg_bandes = Segments(ligne_f, filtres, self.choisir_bande)
         for lab in self.seg_bandes.items.values():
             lab.configure(padx=5, font=F("txt", 8))
-        self.seg_bandes.pack(anchor="w", pady=(8, 6))
+        self.seg_bandes.pack(side="left")
+        self.bouton(ligne_f, "🔔", self.dialogue_alertes).pack(side="right")
         self.seg_bandes.choisir(self.cfg.get("filtre_bande", "tous"))
 
         self.tab_spots = tk.Frame(droite, bg=PANNEAU)
         self.tab_spots.pack(fill="both", expand=True)
-        entetes = ("UTC", "kHz", T("col_call"), T("col_pays"), "km", "Az")
-        largeurs = (5, 8, 11, 15, 6, 4)
+        entetes = ("UTC", "kHz", T("col_call"), "", T("col_pays"), "km", "Az")
+        largeurs = (5, 8, 11, 5, 13, 6, 4)
         for j, (txt, w) in enumerate(zip(entetes, largeurs)):
             tk.Label(self.tab_spots, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                      width=w, anchor="w").grid(row=0, column=j, sticky="w")
@@ -2744,20 +3042,25 @@ class App(tk.Tk):
         for i, ligne in enumerate(self.lignes_spots):
             if i < len(self.spots_affiches):
                 s = self.spots_affiches[i]
-                vals = (f"{s['t']:%H%M}", f"{s['khz']:.1f}", s["call"],
-                        (s.get("pays") or "?")[:15],
+                st = self.statut_spot(s)
+                if self.surveille(s):
+                    st, c_st = "★", UTC_COUL
+                else:
+                    c_st = {"NEW": "#ff5c5c", "BAND": ORANGE}.get(st, TEXTE_DIM)
+                vals = (f"{s['t']:%H%M}", f"{s['khz']:.1f}", s["call"], st,
+                        (s.get("pays") or "?")[:13],
                         f"{s['dist']:.0f}" if "dist" in s else "",
                         f"{s['az']:.0f}°" if "az" in s else "")
                 fond = SEL if s is self.spot_choisi else PANNEAU
                 for j, (l, v) in enumerate(zip(ligne, vals)):
                     l.configure(text=v, bg=fond,
                                 fg=COUL_BANDE.get(s["bande"], TEXTE) if j == 2 else
-                                (TEXTE if j in (1, 3) else TEXTE_DIM))
+                                c_st if j == 3 else (TEXTE if j in (1, 4) else TEXTE_DIM))
             else:
                 for l in ligne:
                     l.configure(text="", bg=PANNEAU)
         if not self.spots_affiches and (self.cfg.get("indicatif") or "").strip():
-            self.lignes_spots[0][3].configure(text=T("dx_aucun"), fg=TEXTE_DIM)
+            self.lignes_spots[0][4].configure(text=T("dx_aucun"), fg=TEXTE_DIM)
         if self._cty_pret == "erreur":
             self.l_spot_detail.configure(text=T("cty_indispo"), fg=ORANGE)
         self.afficher_detail_spot()
@@ -2973,6 +3276,458 @@ class App(tk.Tk):
         self.l_az.configure(text=f"{latlon_vers_locator(lat, lon)}  ·  {fmt_km(km)}  az {az:03.0f}°"
                                  "  ·  " + T("soleil", h=f"{h:+.0f}", etat=T(etat_soleil(h))))
 
+    # ------------------------------------------------------------ log ADIF / pays manquants
+    def charger_dxcc_faits(self):
+        a = self.cfg.get("adif") or {}
+        self.dxcc_faits = {p: set(b) for p, b in (a.get("pays") or {}).items()}
+
+    def importer_adif(self, chemin=None, silencieux=False):
+        if not self.cty:
+            if not silencieux:
+                messagebox.showinfo("ADIF", T("adif_attente"))
+            return False
+        if chemin is None:
+            from tkinter import filedialog
+            chemin = filedialog.askopenfilename(
+                title=T("adif_importer"),
+                filetypes=[("ADIF", "*.adi *.adif *.ADI *.ADIF"), ("*", "*.*")])
+            if not chemin:
+                return False
+        try:
+            qsos = lire_adif(chemin)
+        except Exception as ex:
+            if not silencieux:
+                messagebox.showerror("ADIF", T("adif_erreur", e=ex))
+            return False
+        pays = {}
+        for call, bande in qsos:
+            e = self.cty.chercher(call)
+            if e:
+                pays.setdefault(e[0], set()).add(bande or "?")
+        try:
+            mtime = os.path.getmtime(chemin)
+        except OSError:
+            mtime = 0
+        self.cfg["adif"] = {"fichier": chemin, "mtime": mtime, "nb": len(qsos),
+                            "pays": {p: sorted(b) for p, b in pays.items()}}
+        self.charger_dxcc_faits()
+        self.sauver()
+        journal(f"ADIF importé : {chemin} ({len(qsos)} QSO, {len(pays)} pays)")
+        if self.vue == "dx":
+            self.maj_liste_spots()
+        return True
+
+    def verifier_adif_modifie(self):
+        """Relit le log s'il a été modifié (logiciel de log qui écrit en continu)."""
+        a = self.cfg.get("adif") or {}
+        f = a.get("fichier")
+        if not f or not self.cty:
+            return
+        try:
+            if os.path.getmtime(f) > a.get("mtime", 0) + 1:
+                self.importer_adif(f, silencieux=True)
+        except OSError:
+            pass
+
+    def statut_spot(self, s):
+        """'NEW' (pays jamais contacté), 'BAND' (nouvelle bande) ou ''."""
+        if not self.dxcc_faits or "pays" not in s:
+            return ""
+        bandes = self.dxcc_faits.get(s["pays"])
+        if bandes is None:
+            return "NEW"
+        return "" if s["bande"] in bandes else "BAND"
+
+    # ------------------------------------------------------------ alertes
+    def config_alertes(self):
+        a = self.cfg.setdefault("alertes", {})
+        a.setdefault("liste", "")
+        a.setdefault("new", True)
+        a.setdefault("bande", False)
+        a.setdefault("son", True)
+        a.setdefault("bandes", list(FILTRES_BANDES))
+        return a
+
+    def surveille(self, s):
+        termes = [t.strip().upper() for t in self.config_alertes()["liste"].split(",") if t.strip()]
+        pays = (s.get("pays") or "").upper()
+        for t in termes:
+            if s["call"] == t or s["call"].startswith(t) or (len(t) > 3 and t in pays):
+                return True
+        return False
+
+    def raison_alerte(self, s):
+        a = self.config_alertes()
+        if s["bande"] not in a["bandes"]:
+            return None
+        if self.surveille(s):
+            return "liste"
+        st = self.statut_spot(s)
+        if st == "NEW" and a["new"]:
+            return "new"
+        if st == "BAND" and a["bande"]:
+            return "bande"
+        return None
+
+    def verifier_alertes(self, nouveaux):
+        maintenant = datetime.now(timezone.utc)
+        a_signaler = []
+        for s in nouveaux:
+            if (maintenant - s["t"]).total_seconds() > 15 * 60:
+                continue  # vieux spots (sh/dx au démarrage) : pas d'alerte
+            raison = self.raison_alerte(s)
+            if not raison:
+                continue
+            cle = (s["call"], s["bande"])
+            if time.time() - self._alertes_faites.get(cle, 0) < 3600:
+                continue
+            self._alertes_faites[cle] = time.time()
+            a_signaler.append((s, raison))
+        if not a_signaler:
+            return
+        if self.config_alertes()["son"]:
+            try:
+                if os.name == "nt":
+                    import winsound
+                    winsound.MessageBeep(0x40)
+                else:
+                    self.bell()
+            except Exception:
+                pass
+        for s, raison in a_signaler[:3]:
+            self.toast(s, raison)
+
+    def toast(self, s, raison):
+        titres = {"new": (T("toast_new"), "#ff5c5c"), "bande": (T("toast_bande"), ORANGE),
+                  "liste": (T("toast_liste"), UTC_COUL)}
+        titre, coul = titres[raison]
+        w = tk.Toplevel(self)
+        w.overrideredirect(True)
+        w.attributes("-topmost", True)
+        w.configure(bg=coul, padx=2, pady=2)
+        f = tk.Frame(w, bg=PANNEAU, padx=14, pady=10, cursor="hand2")
+        f.pack()
+        tk.Label(f, text="🔔  " + titre, font=F("titre", 10, "bold"), fg=coul,
+                 bg=PANNEAU).pack(anchor="w")
+        tk.Label(f, text=f"{s['call']}   {s['khz']:.1f} kHz   {s['bande']} m  {s['mode']}",
+                 font=F("mono", 12, "bold"), fg=COUL_BANDE.get(s["bande"], TEXTE),
+                 bg=PANNEAU).pack(anchor="w", pady=(4, 0))
+        info = s.get("pays", "")
+        if "dist" in s:
+            info += f"  ·  {fmt_km(s['dist'])}  ·  az {s['az']:03.0f}°"
+        tk.Label(f, text=info, font=F("txt", 9), fg=TEXTE, bg=PANNEAU).pack(anchor="w")
+        if s["comm"]:
+            tk.Label(f, text=s["comm"][:50], font=F("txt", 8), fg=TEXTE_DIM,
+                     bg=PANNEAU).pack(anchor="w")
+        w.update_idletasks()
+        self._toasts = [t for t in self._toasts if t.winfo_exists()]
+        y = w.winfo_screenheight() - 70 - (w.winfo_height() + 10) * (len(self._toasts) + 1)
+        w.geometry(f"+{w.winfo_screenwidth() - w.winfo_width() - 20}+{max(10, y)}")
+        self._toasts.append(w)
+
+        def ouvrir(e=None):
+            w.destroy()
+            if self.compact:
+                self.fermer_compact()
+            self.afficher_vue("dx")
+            self.spot_choisi = s
+            self.maj_liste_spots()
+            self.dessiner_spots_az()
+            self.lift()
+        for wid in [f] + list(f.winfo_children()):
+            wid.bind("<Button-1>", ouvrir)
+        w.after(15000, lambda: w.winfo_exists() and w.destroy())
+
+    def dialogue_alertes(self):
+        a = self.config_alertes()
+        d = tk.Toplevel(self)
+        d.title(T("alertes"))
+        d.configure(bg=FOND, padx=20, pady=16)
+        d.transient(self)
+        d.resizable(False, False)
+        barre_titre_sombre(d)
+        d.grab_set()
+
+        tk.Label(d, text=T("alertes_liste"), bg=FOND, fg=TEXTE_DIM,
+                 font=F("txt", 9)).pack(anchor="w")
+        e_liste = style_entree(tk.Entry(d, width=52))
+        e_liste.insert(0, a["liste"])
+        e_liste.pack(anchor="w", fill="x", ipady=3, pady=(2, 0))
+        tk.Label(d, text="ex. 3Y0J, VP8, ZL, Bhutan", bg=FOND, fg=TEXTE_DIM,
+                 font=F("txt", 8)).pack(anchor="w", pady=(1, 10))
+
+        tk.Label(d, text=T("alerte_bandes"), bg=FOND, fg=TEXTE_DIM,
+                 font=F("txt", 9)).pack(anchor="w")
+        ligne = tk.Frame(d, bg=BORD, padx=1, pady=1)
+        ligne.pack(anchor="w", pady=(2, 10))
+        choix_bandes = set(a["bandes"])
+
+        def basculer_bande(b, lab):
+            if b in choix_bandes:
+                choix_bandes.discard(b)
+            else:
+                choix_bandes.add(b)
+            lab.configure(bg=SEL if b in choix_bandes else PANNEAU,
+                          fg=TEXTE if b in choix_bandes else TEXTE_DIM)
+        for i, b in enumerate(FILTRES_BANDES):
+            lab = tk.Label(ligne, text=b, font=F("txt", 8), padx=6, pady=3, cursor="hand2",
+                           bg=SEL if b in choix_bandes else PANNEAU,
+                           fg=TEXTE if b in choix_bandes else TEXTE_DIM)
+            lab.pack(side="left", padx=(0 if i == 0 else 1, 0))
+            lab.bind("<Button-1>", lambda e, b=b, l=lab: basculer_bande(b, l))
+
+        v_new, v_bande, v_son = (tk.BooleanVar(value=a["new"]), tk.BooleanVar(value=a["bande"]),
+                                 tk.BooleanVar(value=a["son"]))
+        Bascule(d, T("alerte_new"), v_new).pack(anchor="w", pady=2)
+        Bascule(d, T("alerte_bande"), v_bande).pack(anchor="w", pady=2)
+        Bascule(d, T("alerte_son"), v_son).pack(anchor="w", pady=2)
+
+        # log ADIF
+        cadre, f = self.panneau(d, ACCENT)
+        cadre.pack(fill="x", pady=(14, 0))
+        l_adif = tk.Label(f, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU, anchor="w",
+                          justify="left", wraplength=420)
+        l_adif.pack(anchor="w")
+
+        def maj_adif():
+            ad = self.cfg.get("adif") or {}
+            if ad.get("fichier"):
+                l_adif.configure(text=T("adif_resume", n=ad.get("nb", 0), p=len(ad.get("pays", {})))
+                                 + "\n" + ad["fichier"] + "\n" + T("adif_auto"), fg=TEXTE)
+            else:
+                l_adif.configure(text=T("adif_aucun"), fg=TEXTE_DIM)
+        maj_adif()
+        self.bouton(f, T("adif_importer"),
+                    lambda: (self.importer_adif(), maj_adif())).pack(anchor="w", pady=(8, 0))
+
+        def valider():
+            a["liste"] = e_liste.get().strip()
+            a["bandes"] = [b for b in FILTRES_BANDES if b in choix_bandes]
+            a["new"], a["bande"], a["son"] = v_new.get(), v_bande.get(), v_son.get()
+            self.sauver()
+            d.destroy()
+            if self.vue == "dx":
+                self.maj_liste_spots()
+        self.bouton(d, T("enregistrer"), valider, primaire=True).pack(anchor="e", pady=(14, 0))
+        e_liste.focus_set()
+
+    # ------------------------------------------------------------ mise à jour
+    def verifier_maj(self):
+        self._maj_derniere = time.time()
+
+        def travail():
+            try:
+                data = json.loads(telecharger(URL_API_RELEASE))
+                tag = data.get("tag_name", "")
+                if version_tuple(tag) > version_tuple(VERSION):
+                    self._maj_dispo = tag
+                journal(f"vérification mise à jour : dernière {tag}, locale {VERSION}")
+            except Exception as ex:
+                journal(f"vérification mise à jour impossible : {ex!r}")
+        threading.Thread(target=travail, daemon=True).start()
+
+    def afficher_maj(self):
+        if self._maj_dispo and not self.l_maj.winfo_ismapped():
+            self.l_maj.configure(text=T("maj_dispo", v=self._maj_dispo))
+            self.l_maj.pack(fill="x", before=self.tete)
+
+    # ------------------------------------------------------------ page Lune
+    def construire_page_lune(self):
+        p = self.page_lune
+        haut = tk.Frame(p, bg=FOND)
+        haut.pack(fill="x", padx=16, pady=(6, 0))
+
+        cadre, g = self.panneau(haut, "#d8d2b8")
+        cadre.pack(side="left", fill="y")
+        g.configure(padx=16, pady=10)
+        tk.Label(g, text=T("lune_titre"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(anchor="w")
+        rang = tk.Frame(g, bg=PANNEAU)
+        rang.pack(anchor="w", pady=(6, 0))
+        self.cv_lune = tk.Canvas(rang, width=130, height=130, bg=PANNEAU, highlightthickness=0)
+        self.cv_lune.pack(side="left")
+        info = tk.Frame(rang, bg=PANNEAU)
+        info.pack(side="left", padx=(14, 0))
+        self.l_lune_phase = tk.Label(info, text="", font=F("titre", 14, "bold"), fg="#e8e2c8",
+                                     bg=PANNEAU, anchor="w")
+        self.l_lune_phase.pack(anchor="w")
+        self.l_lune = []
+        for _ in range(4):
+            l = tk.Label(info, text="", font=F("txt", 10), fg=TEXTE, bg=PANNEAU, anchor="w")
+            l.pack(anchor="w", pady=(4, 0))
+            self.l_lune.append(l)
+
+        cadre, d = self.panneau(haut, LUNE)
+        cadre.pack(side="left", fill="both", expand=True, padx=(12, 0))
+        d.configure(padx=14, pady=10)
+        tk.Label(d, text=T("eme_titre"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(anchor="w")
+        ligne = tk.Frame(d, bg=PANNEAU)
+        ligne.pack(anchor="w", pady=(6, 0))
+        tk.Label(ligne, text=T("eme_locator"), font=F("txt", 9), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(side="left")
+        self.e_eme = style_entree(tk.Entry(ligne, width=9))
+        self.e_eme.insert(0, self.cfg.get("eme_locator", ""))
+        self.e_eme.pack(side="left", padx=(8, 0), ipady=2)
+        self.e_eme.bind("<Return>", lambda e: self.calculer_eme())
+        ligne2 = tk.Frame(d, bg=PANNEAU)
+        ligne2.pack(anchor="w", pady=(6, 0))
+        tk.Label(ligne2, text=T("eme_min"), font=F("txt", 9), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(side="left")
+        self.seg_eme = Segments(ligne2, [(h, f"{h}°") for h in ("0", "5", "10", "20")],
+                                self.choisir_hmin)
+        for lab in self.seg_eme.items.values():
+            lab.configure(padx=7, font=F("txt", 8))
+        self.seg_eme.pack(side="left", padx=(8, 0))
+        self.seg_eme.choisir(str(self.cfg.get("eme_hmin", "0")))
+        self.bouton(ligne2, T("eme_calculer"), self.calculer_eme,
+                    primaire=True).pack(side="left", padx=(12, 0))
+        self.l_eme_dx = tk.Label(d, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU, anchor="w")
+        self.l_eme_dx.pack(anchor="w", pady=(8, 2))
+        self.l_eme = tk.Label(d, text=T("eme_aide"), font=F("mono", 9), fg=TEXTE_DIM,
+                              bg=PANNEAU, anchor="w", justify="left")
+        self.l_eme.pack(anchor="w")
+
+        cadre, b = self.panneau(p, LUNE)
+        cadre.pack(fill="x", padx=16, pady=(10, 10))
+        b.configure(padx=10, pady=8)
+        tk.Label(b, text=T("eme_courbe"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
+                 bg=PANNEAU).pack(anchor="w")
+        self.cv_eme = tk.Canvas(b, height=190, bg=PANNEAU, highlightthickness=0)
+        self.cv_eme.pack(fill="x", pady=(4, 0))
+        self.cv_eme.bind("<Configure>", lambda e: self.dessiner_courbes_eme())
+        self._eme = None
+        self._lune_maj = 0
+
+    def choisir_hmin(self, h):
+        self.seg_eme.choisir(h)
+        self.cfg["eme_hmin"] = h
+        self.sauver()
+        if self._eme:
+            self.calculer_eme()
+
+    def dessiner_disque_lune(self, k, croissante):
+        cv = self.cv_lune
+        cv.delete("all")
+        c, R = 65, 56
+        cv.create_oval(c - R, c - R, c + R, c + R, fill="#2b3240", outline="#3d4656")
+        q = 1 - 2 * k
+        pts = []
+        for i in range(0, 37):
+            t = math.radians(-90 + i * 5)
+            pts.append((R * math.cos(t), R * math.sin(t)))
+        lit = [(x, y) for x, y in pts] + [(q * x, y) for x, y in reversed(pts)]
+        sgn = 1 if croissante else -1
+        coords = []
+        for x, y in lit:
+            coords += [c + sgn * x, c + y]
+        if k > 0.01:
+            cv.create_polygon(*coords, fill="#e8e2c8", outline="", smooth=True)
+        cv.create_oval(c - R, c - R, c + R, c + R, outline="#5a6475")
+
+    def maj_lune(self):
+        now = datetime.now(timezone.utc)
+        pos = lune(now)
+        k, age, croissante, ix = phase_lune(now, pos)
+        self.dessiner_disque_lune(k, croissante)
+        self.l_lune_phase.configure(text=T("phases").split("|")[ix])
+        textes = [T("lune_illum", p=f"{k * 100:.0f}", j=f"{age:.1f}"),
+                  T("lune_dist", d=fmt_km(pos[2] * 6378.14), dec=f"{pos[1]:+.1f}")]
+        if self.qth:
+            h, a = lune_locale(now, self.qth[0], self.qth[1], pos)
+            lev, cou = lever_coucher_lune(self.qth[0], self.qth[1], now - timedelta(hours=2))
+            f = (lambda t: t.astimezone().strftime("%H:%M") if t else "--:--")
+            textes = [T("lune_pos", h=f"{h:+.1f}", a=f"{a:.0f}"),
+                      T("lune_lever", l=f(lev), c=f(cou))] + textes
+        else:
+            textes = [T("locator_manquant")] + textes
+        for l, t in zip(self.l_lune, textes):
+            l.configure(text=t)
+        if self._eme:
+            q2 = self._eme["qth2"]
+            h, a = lune_locale(now, q2[0], q2[1], pos)
+            self.l_eme_dx.configure(text=T("eme_dx", h=f"{h:+.1f}", a=f"{a:.0f}"))
+        self._lune_maj = time.time()
+
+    def calculer_eme(self):
+        loc = self.e_eme.get().strip().upper()
+        if not self.qth:
+            self.l_eme.configure(text=T("locator_manquant"), fg=ORANGE)
+            return
+        try:
+            q2 = locator_vers_latlon(loc)
+        except ValueError:
+            self.l_eme.configure(text=T("locator_invalide"), fg=ORANGE)
+            return
+        self.cfg["eme_locator"] = loc
+        self.sauver()
+        hmin = float(self.cfg.get("eme_hmin", "0"))
+        debut = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        fen = fenetres_eme(self.qth, q2, debut, hmin)
+        self._eme = {"qth2": q2, "loc": loc, "fenetres": fen, "debut": debut, "hmin": hmin}
+        if fen:
+            lignes = []
+            for a, b in fen[:7]:
+                duree = int((b - a).total_seconds() // 60)
+                etat = "  ◀ " + T("en_cours") if a <= debut else ""
+                lignes.append(f"{fmt_date(a)}  {a:%H:%M} → {b:%H:%M} UTC   "
+                              f"({duree // 60} h {duree % 60:02d}){etat}")
+            self.l_eme.configure(text="\n".join(lignes), fg=TEXTE)
+        else:
+            self.l_eme.configure(text=T("eme_aucune"), fg=ORANGE)
+        self.maj_lune()
+        self.dessiner_courbes_eme()
+
+    def dessiner_courbes_eme(self):
+        cv = self.cv_eme
+        cv.delete("all")
+        W = max(cv.winfo_width(), 200)
+        H = 190
+        g, dr, ht, bs = 34, 12, 8, 22  # marges gauche, droite, haut, bas
+        debut = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+
+        def X(minutes):
+            return g + (W - g - dr) * minutes / 1440
+
+        def Y(h):
+            return ht + (H - ht - bs) * (90 - max(-10, min(90, h))) / 100
+        for h in (0, 30, 60, 90):
+            cv.create_line(g, Y(h), W - dr, Y(h), fill=BORD if h else "#4a5f75",
+                           dash=() if h == 0 else (2, 4))
+            cv.create_text(g - 6, Y(h), text=f"{h}°", anchor="e", fill=TEXTE_DIM, font=F("txt", 8))
+        for i in range(0, 25, 3):
+            t = debut + timedelta(hours=i)
+            x = X(i * 60)
+            cv.create_line(x, ht, x, H - bs, fill=BORD, dash=(2, 4))
+            cv.create_text(x, H - bs + 10, text=f"{t:%H}h", fill=TEXTE_DIM, font=F("txt", 8))
+        if not self.qth:
+            return
+        series = [(self.qth, ACCENT, self.cfg.get("indicatif") or "QTH")]
+        if self._eme:
+            series.append((self._eme["qth2"], UTC_COUL, self._eme["loc"]))
+            hmin = self._eme["hmin"]
+            for a, b in self._eme["fenetres"]:
+                m0 = (a - debut).total_seconds() / 60
+                m1 = (b - debut).total_seconds() / 60
+                if m1 < 0 or m0 > 1440:
+                    continue
+                cv.create_rectangle(X(max(0, m0)), ht, X(min(1440, m1)), H - bs,
+                                    fill="#1d3a2c", outline="", tags="fen")
+            if hmin > 0:
+                cv.create_line(g, Y(hmin), W - dr, Y(hmin), fill="#3f8f5f", dash=(4, 3))
+            cv.tag_lower("fen")
+        for qth, coul, nom in series:
+            pts = []
+            for m in range(0, 1441, 10):
+                t = debut + timedelta(minutes=m)
+                pts += [X(m), Y(lune_locale(t, qth[0], qth[1])[0])]
+            cv.create_line(*pts, fill=coul, width=2, smooth=True)
+        x = g + 8
+        for qth, coul, nom in series:
+            cv.create_line(x, ht + 8, x + 16, ht + 8, fill=coul, width=2)
+            cv.create_text(x + 20, ht + 8, text=nom, anchor="w", fill=coul, font=F("txt", 8, "bold"))
+            x += 30 + len(nom) * 7
+
     def dialogue_a_propos(self):
         d = tk.Toplevel(self)
         d.title(T("a_propos"))
@@ -3155,6 +3910,17 @@ class App(tk.Tk):
             self._cty_pret = "fait"
             for sp in self.spots:
                 self.localiser_spot(sp)
+            self.verifier_adif_modifie()
+        if time.time() - self._adif_verif > 600:
+            self._adif_verif = time.time()
+            self.verifier_adif_modifie()
+        if time.time() - self._maj_derniere > 12 * 3600:
+            self.verifier_maj()
+        self.afficher_maj()
+        if self.vue == "lune" and not self.compact and time.time() - self._lune_maj > 30:
+            self.maj_lune()
+            if now.minute % 10 == 0 and now.second < 2:
+                self.dessiner_courbes_eme()
         nouveaux = self.cluster.prendre() if self.cluster else []
         if nouveaux:
             self.integrer_spots(nouveaux)

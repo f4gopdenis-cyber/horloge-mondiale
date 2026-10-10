@@ -29,12 +29,23 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
   filtre par bande.
 - **Carte azimutale centrée sur le QTH** (nouveau en 1.3) : direction et distance réelles de chaque
   spot et pays, cercles de distance, grayline. Un clic sur un spot trace son trajet grand cercle.
+- **Alertes DX** (nouveau en 1.5) : son et fenêtre d'alerte quand un indicatif, un préfixe ou
+  un pays surveillé est spotté, ou quand apparaît un pays DXCC jamais contacté (ou une nouvelle bande).
+- **Pays manquants d'après ton log** (nouveau en 1.5) : importe ton log ADIF ; les spots sont
+  marqués **NEW** (jamais contacté) ou **BAND** (nouvelle bande). Le log est relu automatiquement
+  quand ton logiciel de log le met à jour.
+- **Lune / EME** (nouveau en 1.5) : phase, hauteur et azimut de la Lune au QTH, lever/coucher,
+  distance ; fenêtres EME communes avec un autre locator sur 48 h, avec courbe de hauteur sur 24 h.
+- **Avis de mise à jour** (nouveau en 1.5) : un bandeau s'affiche quand une nouvelle version est
+  publiée sur GitHub.
 - **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
 - **Démarrage avec Windows** (option dans les réglages).
 
 ![Vue Carte](carte.png)
 
 ![Vue DX](dx_fr.png)
+
+![Vue Lune / EME](lune.png)
 
 *Capture réalisée avec des données de propagation simulées.*
 
