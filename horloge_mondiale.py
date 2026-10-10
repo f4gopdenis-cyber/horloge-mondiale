@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.2"
+VERSION = "2.3"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -834,6 +834,8 @@ TEXTES = {
     "qso_err": ("Impossible d'écrire le QSO : {e}", "Could not write the QSO: {e}",
                 "No se pudo escribir el QSO: {e}", "QSO konnte nicht geschrieben werden: {e}",
                 "Impossibile scrivere il QSO: {e}", "Não foi possível gravar o QSO: {e}"),
+    "qso_debut": ("début {h} UTC", "start {h} UTC", "inicio {h} UTC", "Beginn {h} UTC",
+                  "inizio {h} UTC", "início {h} UTC"),
     "qso_vide": ("Indique un indicatif", "Enter a callsign", "Indica un indicativo",
                  "Rufzeichen eingeben", "Inserisci un nominativo", "Informe um indicativo"),
     "fichier_qso": ("Fichier ADIF des QSO", "QSO ADIF file", "Archivo ADIF de QSO",
@@ -2445,6 +2447,12 @@ class CarteVille(tk.Frame):
         self.dessiner_barre()
 
 
+# Passage en plein écran / fenêtre agrandie : l'interface est reconstruite à une
+# échelle plus grande ; ces valeurs passent d'une instance de l'App à la suivante.
+RELANCE = {}
+ECH_MAX = 2.5
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -2470,12 +2478,14 @@ class App(tk.Tk):
         self.premier_plan = tk.BooleanVar(value=self.cfg.get("premier_plan", False))
         self.attributes("-topmost", self.premier_plan.get())
         self.title(T("app"))
-        self.ech = {"125": 1.25, "150": 1.5}.get(str(self.cfg.get("taille", "100")), 1.0)
-        if self.ech != 1.0:
-            try:
-                self.tk.call("tk", "scaling", float(self.tk.call("tk", "scaling")) * self.ech)
-            except tk.TclError:
-                pass
+        self.ech_base = {"125": 1.25, "150": 1.5}.get(str(self.cfg.get("taille", "100")), 1.0)
+        self.plein = RELANCE.pop("plein", None)  # None, "zoom" ou "plein"
+        self.ech = RELANCE.pop("ech", None) or self.ech_base
+        try:  # l'échelle Tk survit d'une instance à l'autre : partir de celle d'origine
+            RELANCE.setdefault("scaling0", float(self.tk.call("tk", "scaling")))
+            self.tk.call("tk", "scaling", RELANCE["scaling0"] * self.ech)
+        except tk.TclError:
+            pass
         self.CL, self.CH = round(CARTE_L * self.ech), round(CARTE_H * self.ech)
         self.KX = self.CL / 360
         self.maj_qth()
@@ -2491,7 +2501,7 @@ class App(tk.Tk):
                 v["lat"], v["lon"] = self.coords_tz[v["tz"]]
             self.villes.append(v)
 
-        self.spots = []
+        self.spots = RELANCE.pop("spots", [])
         self.dxcc_faits = {}
         self._alertes_faites = {}
         self._toasts = []
@@ -2526,6 +2536,16 @@ class App(tk.Tk):
             self.after(50, self.ouvrir_compact)
         self.protocol("WM_DELETE_WINDOW", self.quitter)
         barre_titre_sombre(self)
+        self._verif_plein = None
+        self._plein_calme = time.time() + 1.5  # ignorer les événements du démarrage
+        if self.plein == "plein":
+            self.attributes("-fullscreen", True)
+        elif self.plein == "zoom":
+            self.agrandir(True)
+        self.bind("<Configure>", self.sur_redimension, add="+")
+        self.bind("<F11>", lambda e: self.basculer_plein_ecran())
+        self.bind("<Escape>", lambda e: self.plein == "plein" and self.basculer_plein_ecran(),
+                  add="+")
         if self.premier_lancement:
             self.after(400, self.dialogue_reglages)
         self.tick()
@@ -2579,6 +2599,82 @@ class App(tk.Tk):
         except tk.TclError:
             pass
         self.destroy()
+
+    # ------------------------------------------------------------ plein écran
+    def agrandir(self, oui):
+        try:
+            if os.name == "nt":
+                self.state("zoomed" if oui else "normal")
+            else:
+                self.attributes("-zoomed", bool(oui))
+        except tk.TclError:
+            pass
+
+    def etat_fenetre(self):
+        """'plein', 'zoom' ou None selon l'état actuel de la fenêtre."""
+        try:
+            if self.attributes("-fullscreen"):
+                return "plein"
+            if self.state() == "zoomed":
+                return "zoom"
+            if os.name != "nt" and self.attributes("-zoomed"):
+                return "zoom"
+        except tk.TclError:
+            pass
+        return None
+
+    def basculer_plein_ecran(self):
+        self.attributes("-fullscreen", not self.attributes("-fullscreen"))
+        self.sur_redimension()
+
+    def sur_redimension(self, e=None):
+        if e is not None and e.widget is not self:
+            return
+        if self._verif_plein:
+            self.after_cancel(self._verif_plein)
+        self._verif_plein = self.after(400, self.verifier_plein)
+
+    def taille_necessaire(self):
+        """Taille demandée par la fenêtre en tenant compte de la page la plus grande."""
+        self.update_idletasks()
+        pages = (self.page_villes, self.page_carte, self.page_dx, self.page_lune)
+        actuelle = next((p for p in pages if p.winfo_manager()), self.page_villes)
+        l = max([self.winfo_reqwidth()] + [p.winfo_reqwidth() for p in pages])
+        h = (self.winfo_reqheight() - actuelle.winfo_reqheight()
+             + max(p.winfo_reqheight() for p in pages))
+        return l, h
+
+    def echelle_pour(self, largeur, hauteur):
+        l, h = self.taille_necessaire()
+        # une partie (marges, bordures) ne grandit pas avec l'échelle : ~20 %
+        r = min(largeur / l, hauteur / h)
+        e = self.ech * (r - 0.2) / 0.8 if r > 1 else self.ech * r
+        return max(self.ech_base, min(ECH_MAX, math.floor(e * 20) / 20))
+
+    def verifier_plein(self):
+        self._verif_plein = None
+        if self.compact or time.time() < self._plein_calme:
+            return
+        etat = self.etat_fenetre()
+        if etat and not self.plein:
+            self.update_idletasks()
+            cible = self.echelle_pour(self.winfo_width(), self.winfo_height())
+            if cible > self.ech * 1.05:
+                journal(f"plein écran ({etat}) : échelle {self.ech:.2f} -> {cible:.2f}")
+                self.relancer_a(cible, etat)
+            else:
+                self.plein = etat  # pas assez de place pour agrandir : rien à faire
+        elif not etat and self.plein:
+            if self.ech != self.ech_base:
+                journal(f"retour fenêtre normale : échelle {self.ech:.2f} -> {self.ech_base:.2f}")
+                self.relancer_a(None, None)
+            else:
+                self.plein = None
+
+    def relancer_a(self, ech, plein):
+        RELANCE.update(ech=ech, plein=plein, spots=self.spots)
+        self.relancer = True
+        self.quitter()
 
     # ------------------------------------------------------------ en-tête
     def panneau(self, parent, accent):
@@ -3670,6 +3766,14 @@ class App(tk.Tk):
         self.e_qso_khz = style_entree(tk.Entry(l1, width=9))
         self.e_qso_khz.pack(side="left", padx=(6, 0), ipady=2)
         tk.Label(l1, text="kHz", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU2).pack(side="left", padx=(3, 0))
+        # heure de début du QSO : prise quand on commence à taper l'indicatif
+        # (ou quand un spot remplit la saisie) ; l'heure de fin est celle de l'enregistrement
+        self.qso_debut = None
+        self.l_qso_debut = tk.Label(l1, text="", font=F("mono", 8), fg=VERT, bg=PANNEAU2,
+                                    cursor="hand2")
+        self.l_qso_debut.pack(side="left", padx=(8, 0))
+        self.l_qso_debut.bind("<Button-1>", lambda e: self.qso_debut and self.regler_debut_qso(True))
+        self.e_qso_call.bind("<KeyRelease>", lambda e: self.regler_debut_qso(), add="+")
         self.seg_qso_mode = Segments(l1, [(m, m) for m in MODES_QSO], self.choisir_mode_qso)
         for lab in self.seg_qso_mode.items.values():
             lab.configure(padx=4, font=F("txt", 8))
@@ -3707,9 +3811,19 @@ class App(tk.Tk):
                 e.delete(0, "end")
                 e.insert(0, rst)
 
+    def regler_debut_qso(self, maintenant=False):
+        """Démarre (ou efface) l'heure de début selon le contenu de l'indicatif."""
+        if not self.e_qso_call.get().strip():
+            self.qso_debut = None
+        elif maintenant or self.qso_debut is None:
+            self.qso_debut = datetime.now(timezone.utc)
+        self.l_qso_debut.configure(
+            text=T("qso_debut", h=f"{self.qso_debut:%H:%M:%S}") if self.qso_debut else "")
+
     def preremplir_qso(self, s):
         self.vider_qso(garder_message=True)
         self.e_qso_call.insert(0, s["call"])
+        self.regler_debut_qso(True)
         self.e_qso_khz.insert(0, f"{s['khz']:.1f}")
         m = s["mode"]
         self.choisir_mode_qso("FT8" if m in ("DIGI", "PSK", "JT65", "SSTV") else (m if m in MODES_QSO else
@@ -3719,6 +3833,7 @@ class App(tk.Tk):
         for e in (self.e_qso_call, self.e_qso_khz, self.e_qso_comm):
             e.delete(0, "end")
         self.choisir_mode_qso(self.mode_qso, forcer=True)
+        self.regler_debut_qso()
         if not garder_message:
             self.l_qso.configure(text="")
 
@@ -3734,9 +3849,12 @@ class App(tk.Tk):
         except ValueError:
             khz = None
         maintenant = datetime.now(timezone.utc)
+        debut = self.qso_debut if self.qso_debut and self.qso_debut <= maintenant else maintenant
         bande = bande_de(khz) if khz else None
-        qso = {"CALL": call, "QSO_DATE": maintenant.strftime("%Y%m%d"),
-               "TIME_ON": maintenant.strftime("%H%M%S"),
+        qso = {"CALL": call, "QSO_DATE": debut.strftime("%Y%m%d"),
+               "TIME_ON": debut.strftime("%H%M%S"),
+               "QSO_DATE_OFF": maintenant.strftime("%Y%m%d"),
+               "TIME_OFF": maintenant.strftime("%H%M%S"),
                "BAND": (bande + "M") if bande else "",
                "FREQ": f"{khz / 1000:.6f}" if khz else "",
                "MODE": self.mode_qso,
@@ -3759,7 +3877,7 @@ class App(tk.Tk):
         if e and bande and self.dxcc_faits is not None:
             self.dxcc_faits.setdefault(e[0], set()).add(bande)
         self.vider_qso(garder_message=True)
-        self.l_qso.configure(text=T("qso_ok", c=call, h=maintenant.strftime("%H:%M")), fg=VERT)
+        self.l_qso.configure(text=T("qso_ok", c=call, h=f"{debut:%H:%M}–{maintenant:%H:%M}"), fg=VERT)
         cle = (self.cfg.get("qrz_cle") or "").strip()
         if self.cfg.get("qrz_actif") and cle:
             message_local = self.l_qso.cget("text")

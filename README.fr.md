@@ -49,8 +49,10 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
 - **Filtres par mode et skimmers** (nouveau en 2.0) : Tous / CW / Digi / Phonie, et spots CW Skimmer
   (RBN) affichés, masqués ou limités à ≥ 10 dB.
 - **Taille d'affichage** (nouveau en 2.0) : 100 %, 125 % ou 150 % pour les grands écrans de station.
+- **Plein écran** (nouveau en 2.3) : agrandis la fenêtre (ou F11, Échap pour sortir) et tout
+  l'affichage grandit pour remplir l'écran ; il reprend sa taille normale quand on la rétablit.
 - **Saisie rapide de QSO** (nouveau en 2.2) : sélectionner un spot préremplit indicatif,
-  fréquence, mode et reports ; Entrée pour enregistrer. Les QSO sont ajoutés à un fichier ADIF
+  fréquence, mode et reports ; Entrée pour enregistrer (heure de début et de fin du QSO notées, depuis la 2.3). Les QSO sont ajoutés à un fichier ADIF
   (réglable dans ⚙ Réglages) que ton logiciel de log importe automatiquement (par ex. le
   « Moniteur ADIF » d'OpsLog). Le marquage NEW/BAND du spot est mis à jour aussitôt. Envoi direct
   optionnel vers le **logbook QRZ.com** (clé API, abonnement QRZ requis).
