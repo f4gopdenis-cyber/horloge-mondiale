@@ -797,6 +797,7 @@ TEXTES = {
     "adif_erreur": ("Fichier ADIF illisible :\n{e}", "Could not read the ADIF file:\n{e}",
                     "No se puede leer el archivo ADIF:\n{e}", "ADIF-Datei nicht lesbar:\n{e}",
                     "Impossibile leggere il file ADIF:\n{e}", "Não foi possível ler o arquivo ADIF:\n{e}"),
+    "tester": ("Tester", "Test", "Probar", "Testen", "Prova", "Testar"),
     "toast_new": ("Nouveau pays !", "New one!", "¡País nuevo!", "Neues Gebiet!", "Paese nuovo!",
                   "Entidade nova!"),
     "toast_bande": ("Nouvelle bande", "New band", "Banda nueva", "Neues Band", "Banda nuova",
@@ -1876,6 +1877,48 @@ def mode_rigctl(khz, mode):
     if mode == "SSB":
         return "LSB" if khz < 10000 and not 5250 <= khz <= 5450 else "USB"
     return MODES_RIGCTL.get(mode)
+
+
+def fichier_son_alerte():
+    """Crée (une fois) un carillon WAV de 3 notes et renvoie son chemin."""
+    import tempfile
+    import wave
+    import struct
+    chemin = os.path.join(tempfile.gettempdir(), "horloge_mondiale_alerte_v2.wav")
+    if not os.path.exists(chemin):
+        taux = 22050
+        echantillons = []
+        for freq, duree in ((880, 0.16), (1175, 0.16), (1568, 0.30)):
+            n = int(taux * duree)
+            for i in range(n):
+                env = min(1.0, i / (0.01 * taux)) * (1 - i / n) ** 1.5  # attaque douce, décroissance
+                v = math.sin(2 * math.pi * freq * i / taux) + 0.3 * math.sin(4 * math.pi * freq * i / taux)
+                echantillons.append(int(20000 * env * v / 1.3))
+        with wave.open(chemin, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(taux)
+            w.writeframes(struct.pack("<%dh" % len(echantillons), *echantillons))
+    return chemin
+
+
+def jouer_son_alerte(widget=None):
+    try:
+        if os.name == "nt":
+            import winsound
+            winsound.PlaySound(fichier_son_alerte(),
+                               winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+            return
+    except Exception as ex:
+        journal(f"son d'alerte impossible : {ex!r}")
+        try:
+            import winsound
+            winsound.Beep(1000, 300)
+            return
+        except Exception:
+            pass
+    if widget is not None:
+        widget.bell()
 
 
 def envoyer_rig(adresse, khz, mode):
@@ -3580,14 +3623,7 @@ class App(tk.Tk):
         if not a_signaler:
             return
         if self.config_alertes()["son"]:
-            try:
-                if os.name == "nt":
-                    import winsound
-                    winsound.MessageBeep(0x40)
-                else:
-                    self.bell()
-            except Exception:
-                pass
+            jouer_son_alerte(self)
         for s, raison in a_signaler[:3]:
             self.toast(s, raison)
 
@@ -3674,7 +3710,11 @@ class App(tk.Tk):
                                  tk.BooleanVar(value=a["son"]))
         Bascule(d, T("alerte_new"), v_new).pack(anchor="w", pady=2)
         Bascule(d, T("alerte_bande"), v_bande).pack(anchor="w", pady=2)
-        Bascule(d, T("alerte_son"), v_son).pack(anchor="w", pady=2)
+        ligne_son = tk.Frame(d, bg=FOND)
+        ligne_son.pack(anchor="w", fill="x", pady=2)
+        Bascule(ligne_son, T("alerte_son"), v_son).pack(side="left")
+        self.bouton(ligne_son, "🔊 " + T("tester"),
+                    lambda: jouer_son_alerte(self)).pack(side="left", padx=(14, 0))
 
         # log ADIF
         cadre, f = self.panneau(d, ACCENT)
