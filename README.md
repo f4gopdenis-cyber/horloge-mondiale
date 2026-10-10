@@ -46,7 +46,8 @@ country time zones, greyline map and live HF propagation conditions.
   ones highlighted with time left).
 - **Mode and skimmer filters** (new in 2.0): All / CW / Digi / Phone, and CW Skimmer (RBN) spots
   shown, hidden or limited to ≥ 10 dB.
-- **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens.
+- **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens
+  (since 2.4 the window always fits the screen: the maps shrink a little if needed).
 - **Full screen** (new in 2.3): maximize the window (or press F11, Esc to leave) and the whole
   display grows to fill the screen; it returns to normal size when restored.
 - **Quick QSO logging** (new in 2.2): selecting a spot pre-fills call, frequency, mode and

@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.3"
+VERSION = "2.4"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -2522,6 +2522,7 @@ class App(tk.Tk):
         self.construire_page_carte()
         self.construire_page_dx()
         self.construire_page_lune()
+        self.ajuster_carte_a_l_ecran()
         self.charger_table_cty()
         self.demarrer_cluster()
         self.after(3000, self.verifier_maj)
@@ -2537,6 +2538,12 @@ class App(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.quitter)
         barre_titre_sombre(self)
         self._verif_plein = None
+        if not self.plein:  # fenêtre plus haute que l'écran (150 %) : la ramener dedans
+            self.update_idletasks()
+            haut_max = self.winfo_screenheight() - 90  # barre des tâches + barre de titre
+            if self.taille_necessaire()[1] > haut_max:
+                larg = min(self.taille_necessaire()[0], self.winfo_screenwidth())
+                self.geometry(f"{larg}x{haut_max}+{(self.winfo_screenwidth() - larg) // 2}+0")
         self._plein_calme = time.time() + 1.5  # ignorer les événements du démarrage
         if self.plein == "plein":
             self.attributes("-fullscreen", True)
@@ -2670,6 +2677,23 @@ class App(tk.Tk):
                 self.relancer_a(None, None)
             else:
                 self.plein = None
+
+    def ajuster_carte_a_l_ecran(self):
+        """Grande taille d'affichage sur un petit écran : réduire la carte du monde
+        pour que toute la page Carte (indices compris) tienne en hauteur."""
+        if self.plein:
+            return
+        self.update_idletasks()
+        besoin = self.winfo_reqheight() + self.page_carte.winfo_reqheight()
+        trop = besoin - (self.winfo_screenheight() - 90)
+        if trop <= 0:
+            return
+        self.CH = max(180, self.CH - trop)
+        self.CL = 2 * self.CH
+        self.KX = self.CL / 360
+        for w in self.page_carte.winfo_children():
+            w.destroy()
+        self.construire_page_carte()
 
     def relancer_a(self, ech, plein):
         RELANCE.update(ech=ech, plein=plein, spots=self.spots)
@@ -3449,8 +3473,12 @@ class App(tk.Tk):
         # carte azimutale
         gauche = tk.Frame(corps, bg=FOND)
         gauche.pack(side="left", anchor="n")
-        self.AZ_R = round(210 * self.ech)
-        self.AZ_M = round(26 * self.ech)
+        # carte azimutale : pas plus haute que ce que l'écran permet (en-tête ≈ 165 px,
+        # légende ≈ 40 px à 100 %, plus la barre des tâches et la barre de titre)
+        dispo = self.winfo_screenheight() - 90 - round(225 * self.ech)
+        k = min(1.0, dispo / (2 * 236 * self.ech)) if not self.plein else 1.0
+        self.AZ_R = round(210 * self.ech * k)
+        self.AZ_M = round(26 * self.ech * k)
         taille = 2 * (self.AZ_R + self.AZ_M)
         self.cv_az = tk.Canvas(gauche, width=taille, height=taille, bg=FOND,
                                highlightthickness=0)
@@ -3523,8 +3551,10 @@ class App(tk.Tk):
 
         # vue Spots
         self.f_spots = tk.Frame(droite, bg=PANNEAU)
+        # la saisie QSO, les boutons et le détail sont placés en bas d'abord : si la
+        # place manque (grande taille d'affichage), c'est la liste des spots qui raccourcit
+        self.construire_saisie_qso(self.f_spots)
         self.tab_spots = tk.Frame(self.f_spots, bg=PANNEAU)
-        self.tab_spots.pack(fill="both", expand=True)
         entetes = ("UTC", "kHz", T("col_call"), "", T("col_pays"), "km", "Az")
         largeurs = (5, 8, 11, 5, 13, 6, 4)
         for j, (txt, w) in enumerate(zip(entetes, largeurs)):
@@ -3544,14 +3574,14 @@ class App(tk.Tk):
             self.lignes_spots.append(ligne)
         self.l_spot_detail = tk.Label(self.f_spots, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
                                       anchor="w", justify="left", wraplength=400)
-        self.l_spot_detail.pack(fill="x", pady=(8, 0))
         actions = tk.Frame(self.f_spots, bg=PANNEAU)
-        actions.pack(fill="x", pady=(6, 0))
+        actions.pack(side="bottom", fill="x", pady=(6, 0))
+        self.l_spot_detail.pack(side="bottom", fill="x", pady=(8, 0))
+        self.tab_spots.pack(side="top", fill="both", expand=True)
         self.b_accorder = self.bouton(actions, T("accorder"), lambda: self.agir_spot(poste=True))
         self.b_tourner = self.bouton(actions, T("tourner"), lambda: self.agir_spot(rotor=True))
         self.l_action = tk.Label(actions, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                                  anchor="w", wraplength=260, justify="left")
-        self.construire_saisie_qso(self.f_spots)
 
         # vue Activité
         self.f_activite = tk.Frame(droite, bg=PANNEAU)
@@ -3757,7 +3787,7 @@ class App(tk.Tk):
     # ---- saisie de QSO
     def construire_saisie_qso(self, parent):
         cadre = tk.Frame(parent, bg=PANNEAU2, padx=8, pady=6)
-        cadre.pack(fill="x", pady=(8, 0))
+        cadre.pack(side="bottom", fill="x", pady=(8, 0))
         l1 = tk.Frame(cadre, bg=PANNEAU2)
         l1.pack(fill="x")
         tk.Label(l1, text="QSO", font=F("titre", 9, "bold"), fg=ACCENT, bg=PANNEAU2).pack(side="left")
@@ -3770,7 +3800,8 @@ class App(tk.Tk):
         # (ou quand un spot remplit la saisie) ; l'heure de fin est celle de l'enregistrement
         self.qso_debut = None
         self.l_qso_debut = tk.Label(l1, text="", font=F("mono", 8), fg=VERT, bg=PANNEAU2,
-                                    cursor="hand2")
+                                    cursor="hand2", width=len(T("qso_debut", h="00:00:00")),
+                                    anchor="w")
         self.l_qso_debut.pack(side="left", padx=(8, 0))
         self.l_qso_debut.bind("<Button-1>", lambda e: self.qso_debut and self.regler_debut_qso(True))
         self.e_qso_call.bind("<KeyRelease>", lambda e: self.regler_debut_qso(), add="+")
