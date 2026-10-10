@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "1.6"
+VERSION = "1.7"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -1879,27 +1879,42 @@ def mode_rigctl(khz, mode):
 
 
 def envoyer_rig(adresse, khz, mode):
-    """Accorde le poste via le protocole Hamlib NET rigctl (F = fréquence, M = mode)."""
+    """Accorde le poste via le protocole Hamlib NET rigctl (F = fréquence, M = mode).
+    Tolérant : gère le « mode VFO » et les émulations (logiciels de log) qui ne répondent pas."""
     import socket
     hote, port = separer_adresse(adresse, 4532)
     with socket.create_connection((hote, port), timeout=3) as s:
-        s.settimeout(3)
 
-        def commande(c):
+        def echange(c, attente=1.5):
             s.sendall((c + "\n").encode())
+            s.settimeout(attente)
             rep = b""
-            while b"RPRT" not in rep:
-                bloc = s.recv(256)
-                if not bloc:
-                    break
-                rep += bloc
-            m = re.search(rb"RPRT (-?\d+)", rep)
+            try:
+                while True:
+                    bloc = s.recv(1024)
+                    if not bloc:
+                        break
+                    rep += bloc
+                    if b"RPRT" in rep or rep.endswith(b"\n") and c.startswith("\\"):
+                        break
+            except socket.timeout:
+                pass
+            texte = rep.decode("latin-1", "replace").strip()
+            journal(f"rigctl -> {c!r}  <- {texte[:80]!r}")
+            m = re.search(r"RPRT (-?\d+)", texte)
             if m and int(m.group(1)) != 0:
-                raise OSError(f"rigctl {c!r} -> RPRT {m.group(1).decode()}")
-        commande(f"F {int(round(khz * 1000))}")
+                raise OSError(f"rigctl {c!r} -> RPRT {m.group(1)}")
+            return texte
+
+        try:
+            rep = echange("\\chk_vfo", 1.0)
+        except OSError:
+            rep = ""  # commande inconnue de l'émulation : pas de mode VFO
+        vfo = "currVFO " if re.search(r"(CHKVFO\s*)?\b1\b", rep) and "RPRT" not in rep else ""
+        echange(f"F {vfo}{int(round(khz * 1000))}")
         m = mode_rigctl(khz, mode)
         if m:
-            commande(f"M {m} 0")
+            echange(f"M {vfo}{m} 0")
     journal(f"poste accordé sur {khz:.1f} kHz {mode} via {adresse}")
 
 
