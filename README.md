@@ -41,6 +41,12 @@ country time zones, greyline map and live HF propagation conditions.
   logger's CAT sharing in **Hamlib NET rigctl** (OpsLog, Log4OM…, default `127.0.0.1:4532`), so
   there is no COM port conflict. Rotator via **PST Rotator** UDP (`127.0.0.1:12000`) or directly
   through a **GS-232A** TCP controller.
+- **DX panel views** (new in 2.0): **Spots**, **Activity** (spots per band and DX continent over
+  the last 30 minutes) and **Contests** (this week's contests from the WA7BNM calendar, running
+  ones highlighted with time left).
+- **Mode and skimmer filters** (new in 2.0): All / CW / Digi / Phone, and CW Skimmer (RBN) spots
+  shown, hidden or limited to ≥ 10 dB.
+- **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens.
 - **Compact mode**: small always-on-top UTC strip you can move anywhere.
 - **Start with Windows** (option in the settings).
 
@@ -92,6 +98,7 @@ Settings are saved in `horloge_mondiale.json`, in your user folder.
 - Auroral oval: [NOAA SWPC — OVATION model](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
 - DXCC prefixes: [AD1C country files — cty.dat](https://www.country-files.com/)
 - DX spots: DX cluster network (EA4RCH, F5MZN, N8DXE, WA9PIE, VE7CC nodes)
+- Contest calendar: [WA7BNM Contest Calendar](https://www.contestcalendar.com/)
 - Land outlines: `global-land-mask` Python package (NOAA GLOBE data)
 - Country, day and month names: Unicode CLDR
 

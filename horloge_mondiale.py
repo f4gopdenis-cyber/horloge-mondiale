@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "1.9"
+VERSION = "2.0"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -797,6 +797,33 @@ TEXTES = {
     "adif_erreur": ("Fichier ADIF illisible :\n{e}", "Could not read the ADIF file:\n{e}",
                     "No se puede leer el archivo ADIF:\n{e}", "ADIF-Datei nicht lesbar:\n{e}",
                     "Impossibile leggere il file ADIF:\n{e}", "Não foi possível ler o arquivo ADIF:\n{e}"),
+    "activite": ("Activité", "Activity", "Actividad", "Aktivität", "Attività", "Atividade"),
+    "concours": ("Concours", "Contests", "Concursos", "Conteste", "Contest", "Concursos"),
+    "phonie": ("Phonie", "Phone", "Fonía", "Fonie", "Fonia", "Fonia"),
+    "non": ("Non", "No", "No", "Nein", "No", "Não"),
+    "activite_aide": ("Spots des 30 dernières minutes, par bande et continent du DX",
+                      "Spots from the last 30 minutes, by band and DX continent",
+                      "Spots de los últimos 30 minutos, por banda y continente del DX",
+                      "Spots der letzten 30 Minuten nach Band und DX-Kontinent",
+                      "Spot degli ultimi 30 minuti, per banda e continente del DX",
+                      "Spots dos últimos 30 minutos, por banda e continente do DX"),
+    "concours_source": ("Source : calendrier WA7BNM — clic sur un concours pour le règlement",
+                        "Source: WA7BNM Contest Calendar — click a contest for its rules",
+                        "Fuente: calendario WA7BNM — clic en un concurso para el reglamento",
+                        "Quelle: WA7BNM-Kalender — Klick auf einen Contest für die Regeln",
+                        "Fonte: calendario WA7BNM — clic su un contest per il regolamento",
+                        "Fonte: calendário WA7BNM — clique num concurso para o regulamento"),
+    "concours_charge": ("Chargement du calendrier des concours…", "Loading contest calendar…",
+                        "Cargando el calendario de concursos…", "Lade Contest-Kalender…",
+                        "Caricamento del calendario contest…", "Carregando o calendário de concursos…"),
+    "concours_indispo": ("Calendrier des concours indisponible", "Contest calendar unavailable",
+                         "Calendario de concursos no disponible", "Contest-Kalender nicht verfügbar",
+                         "Calendario contest non disponibile", "Calendário de concursos indisponível"),
+    "dans": ("dans {d}", "in {d}", "en {d}", "in {d}", "tra {d}", "em {d}"),
+    "reste": ("encore {d}", "{d} left", "quedan {d}", "noch {d}", "ancora {d}", "restam {d}"),
+    "termine": ("terminé", "finished", "terminado", "beendet", "terminato", "encerrado"),
+    "taille": ("Taille d'affichage", "Display size", "Tamaño de pantalla", "Anzeigegröße",
+               "Dimensione display", "Tamanho da exibição"),
     "tester": ("Tester", "Test", "Probar", "Testen", "Prova", "Testar"),
     "toast_new": ("Nouveau pays !", "New one!", "¡País nuevo!", "Neues Gebiet!", "Paese nuovo!",
                   "Entidade nova!"),
@@ -1459,6 +1486,92 @@ def bande_de(khz):
     return None
 
 
+# segments « phonie » et « numérique » par bande (kHz) — plan de bandes IARU R1 + US
+SEGMENTS_PHONIE = [(1843, 2000), (3600, 4000), (7060, 7300), (14125, 14350), (18111, 18168),
+                   (21151, 21450), (24931, 24990), (28300, 29700), (50100, 50500)]
+SEGMENTS_DIGI = [(1838, 1843), (3570, 3600), (7035, 7060), (10130, 10150), (14070, 14100),
+                 (18095, 18110), (21070, 21110), (24915, 24930), (28070, 28150)]
+MODES_DIGI = ("FT8", "FT4", "RTTY", "PSK", "JT65", "SSTV", "DIGI")
+
+
+def classe_mode(mode):
+    if mode == "CW":
+        return "cw"
+    if mode in MODES_DIGI:
+        return "digi"
+    if mode in ("SSB", "FM"):
+        return "phonie"
+    return ""
+
+
+def est_skimmer(spotter, commentaire):
+    return spotter.endswith("-#") or bool(re.search(r"\bdB\b.*\b(WPM|BPS)\b", commentaire, re.I))
+
+
+def snr_de(commentaire):
+    m = re.search(r"(-?\d+)\s*dB", commentaire, re.I)
+    return int(m.group(1)) if m else None
+
+
+# ---------------------------------------------------------------- concours (WA7BNM)
+URL_CONCOURS = "https://www.contestcalendar.com/calendar.rss"
+MOIS_EN = {m: i + 1 for i, m in enumerate(("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                                           "Aug", "Sep", "Oct", "Nov", "Dec"))}
+
+
+def _date_concours(hhmm, mois, jour, ref):
+    annee = ref.year
+    if MOIS_EN[mois] == 1 and ref.month == 12:
+        annee += 1
+    elif MOIS_EN[mois] == 12 and ref.month == 1:
+        annee -= 1
+    h, m = int(hhmm[:2]), int(hhmm[2:])
+    base = datetime(annee, MOIS_EN[mois], int(jour), tzinfo=timezone.utc)
+    return base + timedelta(hours=h, minutes=m)  # gère 2400Z
+
+
+def periodes_concours(texte, ref):
+    """« 0000Z-0800Z, Oct 10 and 1600Z, Oct 11 to 0400Z, Oct 12 » -> [(début, fin), …]."""
+    periodes = []
+    for morceau in re.split(r"\s+and\s+", texte):
+        m = re.match(r"\s*(\d{4})Z-(\d{4})Z,\s*([A-Z][a-z]{2})\s+(\d{1,2})", morceau)
+        if m:
+            d = _date_concours(m.group(1), m.group(3), m.group(4), ref)
+            f = _date_concours(m.group(2), m.group(3), m.group(4), ref)
+            if f <= d:
+                f += timedelta(days=1)
+            periodes.append((d, f))
+            continue
+        m = re.match(r"\s*(\d{4})Z,\s*([A-Z][a-z]{2})\s+(\d{1,2})\s+to\s+(\d{4})Z,\s*([A-Z][a-z]{2})\s+(\d{1,2})",
+                     morceau)
+        if m:
+            periodes.append((_date_concours(m.group(1), m.group(2), m.group(3), ref),
+                             _date_concours(m.group(4), m.group(5), m.group(6), ref)))
+    return periodes
+
+
+def lire_concours(data):
+    racine = ET.fromstring(data)
+    ref = datetime.now(timezone.utc)
+    out = []
+    for item in racine.iter("item"):
+        titre = (item.findtext("title") or "").strip()
+        desc = (item.findtext("description") or "").strip()
+        if titre:
+            out.append({"nom": titre, "lien": (item.findtext("link") or "").strip(),
+                        "horaires": desc, "periodes": periodes_concours(desc, ref)})
+    return out
+
+
+def duree_txt(td):
+    m = max(0, int(td.total_seconds() // 60))
+    if m < 60:
+        return f"{m} min"
+    if m < 48 * 60:
+        return f"{m // 60} h {m % 60:02d}"
+    return f"{m // 1440} j {m % 1440 // 60} h"
+
+
 def mode_de(khz, commentaire):
     c = commentaire.upper()
     for m in ("FT8", "FT4", "RTTY", "PSK", "JT65", "SSTV", "CW", "SSB", "USB", "LSB", "FM"):
@@ -1467,6 +1580,12 @@ def mode_de(khz, commentaire):
     for f in (1840, 3573, 5357, 7074, 10136, 14074, 18100, 21074, 24915, 28074, 50313):
         if abs(khz - f) <= 3:
             return "FT8"
+    for a, b in SEGMENTS_DIGI:
+        if a <= khz < b:
+            return "DIGI"
+    for a, b in SEGMENTS_PHONIE:
+        if a <= khz <= b:
+            return "FM" if khz >= 29500 else "SSB"
     sous = khz % 1000
     bande = bande_de(khz)
     if bande in ("30",):
@@ -1863,6 +1982,7 @@ def lire_adif(chemin):
 RIG_DEFAUT = "127.0.0.1:4532"          # Hamlib NET rigctl (OpsLog, Log4OM, rigctld…)
 ROTOR_PST_DEFAUT = "127.0.0.1:12000"   # PST Rotator, commande UDP
 MODES_RIGCTL = {"CW": "CW", "RTTY": "RTTY", "FM": "FM", "FT8": "PKTUSB", "FT4": "PKTUSB",
+                "DIGI": "PKTUSB",
                 "PSK": "PKTUSB", "JT65": "PKTUSB", "SSTV": "USB"}
 
 
@@ -2252,6 +2372,14 @@ class App(tk.Tk):
         self.premier_plan = tk.BooleanVar(value=self.cfg.get("premier_plan", False))
         self.attributes("-topmost", self.premier_plan.get())
         self.title(T("app"))
+        self.ech = {"125": 1.25, "150": 1.5}.get(str(self.cfg.get("taille", "100")), 1.0)
+        if self.ech != 1.0:
+            try:
+                self.tk.call("tk", "scaling", float(self.tk.call("tk", "scaling")) * self.ech)
+            except tk.TclError:
+                pass
+        self.CL, self.CH = round(CARTE_L * self.ech), round(CARTE_H * self.ech)
+        self.KX = self.CL / 360
         self.maj_qth()
 
         self.villes = []
@@ -2456,7 +2584,7 @@ class App(tk.Tk):
             self.dessiner_carte()
         elif vue == "dx":
             self.dessiner_az()
-            self.maj_liste_spots()
+            self.maj_vue_dx()
         elif vue == "lune":
             if self._eme is None and self.cfg.get("eme_locator") and self.qth:
                 self.calculer_eme()
@@ -2610,7 +2738,7 @@ class App(tk.Tk):
         p = self.page_carte
         cadre = tk.Frame(p, bg=BORD, padx=1, pady=1)
         cadre.pack(pady=(6, 0))
-        self.canvas = tk.Canvas(cadre, width=CARTE_L, height=CARTE_H, bg="#09111c",
+        self.canvas = tk.Canvas(cadre, width=self.CL, height=self.CH, bg="#09111c",
                                 highlightthickness=0)
         self.canvas.pack()
         self.l_survol = tk.Label(p, text=T("survol_aide"),
@@ -2689,15 +2817,15 @@ class App(tk.Tk):
         self.masque = decoder_masque()
         self.base = self.masque
         self.palette = palette_carte()
-        self.img = [tk.PhotoImage(width=CARTE_L, height=CARTE_H) for _ in range(2)]
+        self.img = [tk.PhotoImage(width=self.CL, height=self.CH) for _ in range(2)]
         self.img_actif = 0
         self.item_img = self.canvas.create_image(0, 0, anchor="nw", image=self.img[0])
         for lon in range(-150, 180, 30):
-            x = (lon + 180) * 2
-            self.canvas.create_line(x, 0, x, CARTE_H, fill="#33465a", dash=(2, 4))
+            x = (lon + 180) * self.KX
+            self.canvas.create_line(x, 0, x, self.CH, fill="#33465a", dash=(2, 4))
         for lat in range(-60, 90, 30):
-            y = (90 - lat) * 2
-            self.canvas.create_line(0, y, CARTE_L, y,
+            y = (90 - lat) * self.KX
+            self.canvas.create_line(0, y, self.CL, y,
                                     fill="#4a5f75" if lat == 0 else "#33465a", dash=(2, 4))
         self._rendu = None
         self.sol_carte = None
@@ -2805,9 +2933,8 @@ class App(tk.Tk):
         self.l_sources.configure(text="  ·  ".join(morceaux + [T("src_maj")]),
                                  fg=ORANGE if err else TEXTE_DIM)
 
-    @staticmethod
-    def xy(lat, lon):
-        return (lon + 180) * 2, (90 - lat) * 2
+    def xy(self, lat, lon):
+        return (lon + 180) * self.KX, (90 - lat) * self.KX
 
     def dessiner_carte(self):
         """Lance un rendu jour/nuit progressif (évite de figer la fenêtre)."""
@@ -2829,22 +2956,26 @@ class App(tk.Tk):
     def _generateur_rendu(self, sol):
         decl, sublon = sol
         sd, cd = math.sin(decl), math.cos(decl)
-        cos_h = [math.cos(math.radians(-180 + (c + 0.5) * 0.5 - sublon))
-                 for c in range(CARTE_L)]
+        CL, CH = self.CL, self.CH
+        cos_h = [math.cos(math.radians(-180 + (c + 0.5) * 360 / CL - sublon)) for c in range(CL)]
+        colonnes = [min(CARTE_L - 1, int(c * CARTE_L / CL)) for c in range(CL)]
         s0, s1 = math.sin(math.radians(-12)), math.sin(math.radians(2))
         k = 15.999 / (s1 - s0)
         P = self.palette
         dest = self.img[1 - self.img_actif]
         pas = 40
-        for r0 in range(0, CARTE_H, pas):
+        for r0 in range(0, CH, pas):
             lignes = []
-            for r in range(r0, min(r0 + pas, CARTE_H)):
-                lat = math.radians(90 - (r + 0.5) * 0.5)
+            for r in range(r0, min(r0 + pas, CH)):
+                lat = math.radians(90 - (r + 0.5) * 180 / CH)
                 a = math.sin(lat) * sd - s0
                 b = math.cos(lat) * cd
+                rangee = self.base[min(CARTE_H - 1, int(r * CARTE_H / CH))]
+                if CL != CARTE_L:
+                    rangee = [rangee[i] for i in colonnes]
                 lignes.append("{" + " ".join(
                     [P[t + (15 if (v := int((a + b * ch) * k)) > 15 else (v if v > 0 else 0))]
-                     for t, ch in zip(self.base[r], cos_h)]) + "}")
+                     for t, ch in zip(rangee, cos_h)]) + "}")
             dest.put(" ".join(lignes), to=(0, r0))
             yield
         self.img_actif = 1 - self.img_actif
@@ -2924,8 +3055,8 @@ class App(tk.Tk):
                            tags="ov")
 
     def survol(self, e):
-        lon = e.x / 2 - 180
-        lat = 90 - e.y / 2
+        lon = e.x / self.KX - 180
+        lat = 90 - e.y / self.KX
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             return
         now = datetime.now(timezone.utc)
@@ -3078,7 +3209,8 @@ class App(tk.Tk):
             if t > maintenant + timedelta(minutes=5):
                 t -= timedelta(days=1)
             sp = {"t": t, "khz": khz, "call": call, "spotter": spotter, "comm": comm,
-                  "bande": bande, "mode": mode_de(khz, comm)}
+                  "bande": bande, "mode": mode_de(khz, comm),
+                  "skimmer": est_skimmer(spotter, comm), "snr": snr_de(comm)}
             self.localiser_spot(sp)
             ajoutes.append(sp)
             # même station sur la même bande : on garde le plus récent
@@ -3090,9 +3222,21 @@ class App(tk.Tk):
         self.spots.sort(key=lambda s: s["t"], reverse=True)
         self.verifier_alertes(ajoutes)
 
-    def spots_visibles(self):
-        f = self.cfg.get("filtre_bande", "tous")
-        return [s for s in self.spots if f == "tous" or s["bande"] == f]
+    def spots_visibles(self, bande=True):
+        fb = self.cfg.get("filtre_bande", "tous") if bande else "tous"
+        fm = self.cfg.get("filtre_mode", "tous")
+        fr = self.cfg.get("filtre_rbn", "tous")
+        res = []
+        for s in self.spots:
+            if fb != "tous" and s["bande"] != fb:
+                continue
+            if fm != "tous" and classe_mode(s["mode"]) != fm:
+                continue
+            if s.get("skimmer"):
+                if fr == "non" or (fr == "10" and (s.get("snr") or 0) < 10):
+                    continue
+            res.append(s)
+        return res
 
     # ------------------------------------------------------------ page DX
     def construire_page_dx(self):
@@ -3103,8 +3247,8 @@ class App(tk.Tk):
         # carte azimutale
         gauche = tk.Frame(corps, bg=FOND)
         gauche.pack(side="left", anchor="n")
-        self.AZ_R = 210
-        self.AZ_M = 26
+        self.AZ_R = round(210 * self.ech)
+        self.AZ_M = round(26 * self.ech)
         taille = 2 * (self.AZ_R + self.AZ_M)
         self.cv_az = tk.Canvas(gauche, width=taille, height=taille, bg=FOND,
                                highlightthickness=0)
@@ -3136,17 +3280,48 @@ class App(tk.Tk):
         self.l_cluster = tk.Label(tete, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU)
         self.l_cluster.pack(side="right")
 
+        # vues du panneau : spots / activité / concours
+        ligne_v = tk.Frame(droite, bg=PANNEAU)
+        ligne_v.pack(fill="x", pady=(8, 0))
+        self.seg_vue_dx = Segments(ligne_v, [("spots", "Spots"), ("activite", T("activite")),
+                                             ("concours", T("concours"))], self.choisir_vue_dx)
+        for lab in self.seg_vue_dx.items.values():
+            lab.configure(padx=10, font=F("txt", 8))
+        self.seg_vue_dx.pack(side="left")
+        self.bouton(ligne_v, "🔔", self.dialogue_alertes).pack(side="right")
+
+        # filtres
+        self.f_filtres = tk.Frame(droite, bg=PANNEAU)
         filtres = [("tous", T("dx_tous"))] + [(b, b) for b in FILTRES_BANDES]
-        ligne_f = tk.Frame(droite, bg=PANNEAU)
-        ligne_f.pack(fill="x", pady=(8, 6))
-        self.seg_bandes = Segments(ligne_f, filtres, self.choisir_bande)
+        self.ligne_bandes = tk.Frame(self.f_filtres, bg=PANNEAU)
+        self.ligne_bandes.pack(fill="x", pady=(6, 0))
+        self.seg_bandes = Segments(self.ligne_bandes, filtres, self.choisir_bande)
         for lab in self.seg_bandes.items.values():
             lab.configure(padx=5, font=F("txt", 8))
         self.seg_bandes.pack(side="left")
-        self.bouton(ligne_f, "🔔", self.dialogue_alertes).pack(side="right")
         self.seg_bandes.choisir(self.cfg.get("filtre_bande", "tous"))
+        ligne_m = tk.Frame(self.f_filtres, bg=PANNEAU)
+        ligne_m.pack(fill="x", pady=(4, 4))
+        self.ligne_modes = ligne_m
+        self.seg_modes = Segments(ligne_m, [("tous", T("dx_tous")), ("cw", "CW"), ("digi", "Digi"),
+                                            ("phonie", T("phonie"))],
+                                  lambda m: self.choisir_filtre("filtre_mode", m, self.seg_modes))
+        self.seg_rbn = Segments(ligne_m, [("non", T("non")), ("10", "≥10 dB"), ("tous", T("dx_tous"))],
+                                lambda m: self.choisir_filtre("filtre_rbn", m, self.seg_rbn))
+        for seg in (self.seg_modes, self.seg_rbn):
+            for lab in seg.items.values():
+                lab.configure(padx=6, font=F("txt", 8))
+        self.seg_modes.pack(side="left")
+        tk.Label(ligne_m, text="RBN", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU).pack(
+            side="left", padx=(14, 4))
+        self.seg_rbn.pack(side="left")
+        self.seg_modes.choisir(self.cfg.get("filtre_mode", "tous"))
+        self.seg_rbn.choisir(self.cfg.get("filtre_rbn", "tous"))
+        self.f_filtres.pack(fill="x")
 
-        self.tab_spots = tk.Frame(droite, bg=PANNEAU)
+        # vue Spots
+        self.f_spots = tk.Frame(droite, bg=PANNEAU)
+        self.tab_spots = tk.Frame(self.f_spots, bg=PANNEAU)
         self.tab_spots.pack(fill="both", expand=True)
         entetes = ("UTC", "kHz", T("col_call"), "", T("col_pays"), "km", "Az")
         largeurs = (5, 8, 11, 5, 13, 6, 4)
@@ -3154,7 +3329,7 @@ class App(tk.Tk):
             tk.Label(self.tab_spots, text=txt, font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                      width=w, anchor="w").grid(row=0, column=j, sticky="w")
         self.lignes_spots = []
-        for i in range(17):
+        for i in range(15):
             ligne = []
             for j, w in enumerate(largeurs):
                 l = tk.Label(self.tab_spots, text="", width=w, anchor="w", bg=PANNEAU,
@@ -3165,24 +3340,165 @@ class App(tk.Tk):
                 l.bind("<Double-Button-1>", lambda e, k=i: self.double_clic_spot(k))
                 ligne.append(l)
             self.lignes_spots.append(ligne)
-        self.l_spot_detail = tk.Label(droite, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
+        self.l_spot_detail = tk.Label(self.f_spots, text="", font=F("txt", 9), fg=TEXTE, bg=PANNEAU,
                                       anchor="w", justify="left", wraplength=400)
         self.l_spot_detail.pack(fill="x", pady=(8, 0))
-        actions = tk.Frame(droite, bg=PANNEAU)
+        actions = tk.Frame(self.f_spots, bg=PANNEAU)
         actions.pack(fill="x", pady=(6, 0))
         self.b_accorder = self.bouton(actions, T("accorder"), lambda: self.agir_spot(poste=True))
         self.b_tourner = self.bouton(actions, T("tourner"), lambda: self.agir_spot(rotor=True))
         self.l_action = tk.Label(actions, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
                                  anchor="w", wraplength=260, justify="left")
+
+        # vue Activité
+        self.f_activite = tk.Frame(droite, bg=PANNEAU)
+        grille = tk.Frame(self.f_activite, bg=PANNEAU)
+        grille.pack(anchor="w", pady=(6, 0))
+        self.CONTINENTS = ("EU", "NA", "SA", "AS", "AF", "OC")
+        tk.Label(grille, text="", width=5, bg=PANNEAU).grid(row=0, column=0)
+        for j, c in enumerate(self.CONTINENTS):
+            tk.Label(grille, text=c, font=F("titre", 9, "bold"), fg=TEXTE_DIM, bg=PANNEAU,
+                     width=6).grid(row=0, column=j + 1, pady=(0, 2))
+        self.cases_act = {}
+        for i, b in enumerate(FILTRES_BANDES):
+            tk.Label(grille, text=f"{b} m", font=F("mono", 9, "bold"),
+                     fg=COUL_BANDE.get(b, TEXTE), bg=PANNEAU, width=5, anchor="w").grid(
+                row=i + 1, column=0, sticky="w")
+            for j, c in enumerate(self.CONTINENTS):
+                l = tk.Label(grille, text="", font=F("mono", 9, "bold"), fg=TEXTE, bg=PANNEAU2,
+                             width=6, pady=2)
+                l.grid(row=i + 1, column=j + 1, padx=1, pady=1)
+                self.cases_act[(b, c)] = l
+        tk.Label(self.f_activite, text=T("activite_aide"), font=F("txt", 8), fg=TEXTE_DIM,
+                 bg=PANNEAU, anchor="w").pack(anchor="w", pady=(8, 0))
+
+        # vue Concours
+        self.f_concours = tk.Frame(droite, bg=PANNEAU)
+        self.lignes_concours = []
+        for i in range(12):
+            l1 = tk.Label(self.f_concours, text="", font=F("titre", 9, "bold"), fg=TEXTE, bg=PANNEAU,
+                          anchor="w", cursor="hand2")
+            l2 = tk.Label(self.f_concours, text="", font=F("txt", 8), fg=TEXTE_DIM, bg=PANNEAU,
+                          anchor="w")
+            l1.pack(fill="x", pady=(6 if i else 8, 0))
+            l2.pack(fill="x")
+            self.lignes_concours.append((l1, l2))
+        tk.Label(self.f_concours, text=T("concours_source"), font=F("txt", 8), fg=TEXTE_DIM,
+                 bg=PANNEAU, anchor="w").pack(anchor="w", pady=(8, 0))
+        self.concours = None
+        self._concours_derniere = 0
+
         self._retours_action = []
         self.spots_affiches = []
         self.spot_choisi = None
+        self.vue_dx = None
+        self.choisir_vue_dx(self.cfg.get("vue_dx", "spots"))
+
+    def choisir_vue_dx(self, v):
+        self.vue_dx = v
+        self.cfg["vue_dx"] = v
+        self.seg_vue_dx.choisir(v)
+        for f in (self.f_filtres, self.f_spots, self.f_activite, self.f_concours):
+            f.pack_forget()
+        if v in ("spots", "activite"):
+            self.f_filtres.pack(fill="x")
+            if v == "spots":
+                self.ligne_bandes.pack(fill="x", pady=(6, 0), before=self.ligne_modes)
+            else:
+                self.ligne_bandes.pack_forget()
+        {"spots": self.f_spots, "activite": self.f_activite,
+         "concours": self.f_concours}[v].pack(fill="both", expand=True)
+        self.sauver()
+        self.maj_vue_dx()
+
+    def maj_vue_dx(self):
+        if self.vue_dx == "activite":
+            self.maj_activite()
+        elif self.vue_dx == "concours":
+            self.maj_concours()
+        else:
+            self.maj_liste_spots()
+        txt, coul = self.etat_cluster_txt()
+        self.l_cluster.configure(text=txt, fg=coul)
+
+    def choisir_filtre(self, cle, valeur, seg):
+        self.cfg[cle] = valeur
+        seg.choisir(valeur)
+        self.sauver()
+        self.maj_vue_dx()
+        self.dessiner_spots_az()
+        if self.vue == "carte" and self.sol_carte:
+            self.dessiner_surcouches(self.sol_carte)
+
+    def maj_activite(self):
+        limite = datetime.now(timezone.utc) - timedelta(minutes=30)
+        compte = {}
+        for s in self.spots_visibles(bande=False):
+            if s["t"] >= limite and s.get("cont") in self.CONTINENTS:
+                compte[(s["bande"], s["cont"])] = compte.get((s["bande"], s["cont"]), 0) + 1
+        maxi = max(compte.values(), default=1)
+        for (b, c), l in self.cases_act.items():
+            n = compte.get((b, c), 0)
+            if n:
+                f = 0.25 + 0.75 * n / maxi
+                base = (28, 36, 48)
+                cible = (31, 140, 80)
+                coul = "#%02x%02x%02x" % tuple(int(base[i] + (cible[i] - base[i]) * f) for i in range(3))
+                l.configure(text=str(n), bg=coul, fg="#ffffff")
+            else:
+                l.configure(text="·", bg=PANNEAU2, fg=TEXTE_DIM)
+
+    def charger_concours(self):
+        self._concours_derniere = time.time()
+
+        def travail():
+            try:
+                self._concours_nouveaux = lire_concours(telecharger(URL_CONCOURS))
+            except Exception as ex:
+                journal(f"calendrier des concours impossible : {ex!r}")
+                self._concours_nouveaux = []
+        threading.Thread(target=travail, daemon=True).start()
+
+    def maj_concours(self):
+        if self.concours is None:
+            for i, (l1, l2) in enumerate(self.lignes_concours):
+                l1.configure(text=T("concours_charge") if i == 0 else "")
+                l2.configure(text="")
+            return
+        now = datetime.now(timezone.utc)
+
+        def etat(c):
+            ps = c["periodes"]
+            if not ps:
+                return 2, None, ""
+            for d, f in ps:
+                if d <= now < f:
+                    return 0, f, T("reste", d=duree_txt(f - now))
+            futurs = [d for d, f in ps if d > now]
+            if futurs:
+                return 1, min(futurs), T("dans", d=duree_txt(min(futurs) - now))
+            return 3, None, T("termine")
+        liste = sorted(self.concours, key=lambda c: (etat(c)[0], etat(c)[1] or now))
+        liste = [c for c in liste if etat(c)[0] != 3] + [c for c in liste if etat(c)[0] == 3]
+        if not liste:
+            self.lignes_concours[0][0].configure(text=T("concours_indispo"), fg=ORANGE)
+        for i, (l1, l2) in enumerate(self.lignes_concours):
+            if i < len(liste):
+                c = liste[i]
+                rang, _, info = etat(c)
+                puce = {0: "●  ", 1: "○  ", 2: "·  ", 3: "·  "}[rang]
+                l1.configure(text=puce + c["nom"], fg=VERT if rang == 0 else (TEXTE if rang < 3 else TEXTE_DIM))
+                l2.configure(text=f"     {c['horaires']}" + (f"   —   {info}" if info else ""))
+                l1.bind("<Button-1>", lambda e, u=c["lien"]: u and webbrowser.open(u))
+            elif not (i == 0 and not liste):
+                l1.configure(text="")
+                l2.configure(text="")
 
     def choisir_bande(self, b):
         self.cfg["filtre_bande"] = b
         self.seg_bandes.choisir(b)
         self.sauver()
-        self.maj_liste_spots()
+        self.maj_vue_dx()
         self.dessiner_spots_az()
         if self.vue == "carte" and self.sol_carte:
             self.dessiner_surcouches(self.sol_carte)
@@ -3778,7 +4094,8 @@ class App(tk.Tk):
                  bg=PANNEAU).pack(anchor="w")
         rang = tk.Frame(g, bg=PANNEAU)
         rang.pack(anchor="w", pady=(6, 0))
-        self.cv_lune = tk.Canvas(rang, width=130, height=130, bg=PANNEAU, highlightthickness=0)
+        tl = round(130 * self.ech)
+        self.cv_lune = tk.Canvas(rang, width=tl, height=tl, bg=PANNEAU, highlightthickness=0)
         self.cv_lune.pack(side="left")
         info = tk.Frame(rang, bg=PANNEAU)
         info.pack(side="left", padx=(14, 0))
@@ -3827,7 +4144,7 @@ class App(tk.Tk):
         b.configure(padx=10, pady=8)
         tk.Label(b, text=T("eme_courbe"), font=F("titre", 8, "bold"), fg=TEXTE_DIM,
                  bg=PANNEAU).pack(anchor="w")
-        self.cv_eme = tk.Canvas(b, height=190, bg=PANNEAU, highlightthickness=0)
+        self.cv_eme = tk.Canvas(b, height=round(190 * self.ech), bg=PANNEAU, highlightthickness=0)
         self.cv_eme.pack(fill="x", pady=(4, 0))
         self.cv_eme.bind("<Configure>", lambda e: self.dessiner_courbes_eme())
         self._eme = None
@@ -3843,7 +4160,7 @@ class App(tk.Tk):
     def dessiner_disque_lune(self, k, croissante):
         cv = self.cv_lune
         cv.delete("all")
-        c, R = 65, 56
+        c, R = round(65 * self.ech), round(56 * self.ech)
         cv.create_oval(c - R, c - R, c + R, c + R, fill="#2b3240", outline="#3d4656")
         q = 1 - 2 * k
         pts = []
@@ -3916,7 +4233,7 @@ class App(tk.Tk):
         cv = self.cv_eme
         cv.delete("all")
         W = max(cv.winfo_width(), 200)
-        H = 190
+        H = round(190 * self.ech)
         g, dr, ht, bs = 34, 12, 8, 22  # marges gauche, droite, haut, bas
         debut = datetime.now(timezone.utc).replace(second=0, microsecond=0)
 
@@ -4147,8 +4464,10 @@ class App(tk.Tk):
             if ancien != (self.cfg.get("indicatif"), self.cfg.get("cluster")):
                 self.spots = []
                 self.demarrer_cluster()
-            nouvelle = choix["langue"] != self.cfg.get("langue")
+            nouvelle = (choix["langue"] != self.cfg.get("langue")
+                        or choix_taille["t"] != str(self.cfg.get("taille", "100")))
             self.cfg["langue"] = choix["langue"]
+            self.cfg["taille"] = choix_taille["t"]
             self.sauver()
             d.destroy()
             if nouvelle:  # reconstruire toute l'interface dans la nouvelle langue
@@ -4163,8 +4482,16 @@ class App(tk.Tk):
                 self.dessiner_az()
                 self.maj_liste_spots()
 
+        etiquette(T("taille"), 11)
+        choix_taille = {"t": str(self.cfg.get("taille", "100"))}
+        seg_t = Segments(d, [("100", "100 %"), ("125", "125 %"), ("150", "150 %")],
+                         lambda t: (choix_taille.update(t=t), seg_t.choisir(t)))
+        for lab in seg_t.items.values():
+            lab.configure(padx=8, font=F("txt", 8))
+        seg_t.grid(row=11, column=1, sticky="w", pady=(10, 0))
+        seg_t.choisir(choix_taille["t"])
         self.bouton(d, T("enregistrer"), valider, primaire=True).grid(
-            row=11, column=1, sticky="e", pady=(16, 0))
+            row=12, column=1, sticky="e", pady=(16, 0))
         d.bind("<Return>", lambda e: valider())
         e_ind.focus_set()
 
@@ -4204,6 +4531,12 @@ class App(tk.Tk):
             self.verifier_adif_modifie()
         if time.time() - self._maj_derniere > 12 * 3600:
             self.verifier_maj()
+        if time.time() - self._concours_derniere > 6 * 3600:
+            self.charger_concours()
+        if getattr(self, "_concours_nouveaux", None) is not None:
+            self.concours, self._concours_nouveaux = self._concours_nouveaux, None
+            if self.vue == "dx" and self.vue_dx == "concours":
+                self.maj_concours()
         self.afficher_maj()
         if self.vue == "lune" and not self.compact and time.time() - self._lune_maj > 30:
             self.maj_lune()
@@ -4219,7 +4552,7 @@ class App(tk.Tk):
             return
         self._maj_dx = t
         if self.vue == "dx" and not self.compact:
-            self.maj_liste_spots()
+            self.maj_vue_dx()
             if (now.hour, now.minute) != self._minute_az:
                 self.dessiner_az()
             elif nouveaux:

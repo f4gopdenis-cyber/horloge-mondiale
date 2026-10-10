@@ -43,6 +43,12 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
   ton logiciel de log en **Hamlib NET rigctl** (OpsLog, Log4OM…, par défaut `127.0.0.1:4532`) :
   aucun conflit de port COM. Le rotor passe par **PST Rotator** en UDP (`127.0.0.1:12000`) ou
   directement par un contrôleur **GS-232A** en TCP.
+- **Vues du panneau DX** (nouveau en 2.0) : **Spots**, **Activité** (spots par bande et continent
+  du DX sur les 30 dernières minutes) et **Concours** (concours de la semaine d'après le calendrier
+  WA7BNM, ceux en cours mis en avant avec le temps restant).
+- **Filtres par mode et skimmers** (nouveau en 2.0) : Tous / CW / Digi / Phonie, et spots CW Skimmer
+  (RBN) affichés, masqués ou limités à ≥ 10 dB.
+- **Taille d'affichage** (nouveau en 2.0) : 100 %, 125 % ou 150 % pour les grands écrans de station.
 - **Mode compact** : petite bande UTC toujours au premier plan, déplaçable.
 - **Démarrage avec Windows** (option dans les réglages).
 
@@ -102,6 +108,7 @@ Les réglages sont enregistrés dans `horloge_mondiale.json`, dans le dossier ut
 - Ovale auroral : [NOAA SWPC — modèle OVATION](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)
 - Préfixes DXCC : [fichiers pays d'AD1C — cty.dat](https://www.country-files.com/)
 - Spots DX : réseau DX cluster (nœuds EA4RCH, F5MZN, N8DXE, WA9PIE, VE7CC)
+- Calendrier des concours : [WA7BNM Contest Calendar](https://www.contestcalendar.com/)
 - Contours des terres : paquet Python `global-land-mask` (données NOAA GLOBE)
 - Noms des pays, jours et mois : Unicode CLDR
 
