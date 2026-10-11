@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.5"
+VERSION = "2.6"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -866,6 +866,12 @@ TEXTES = {
                  "QRZ: chiave rifiutata o abbonamento richiesto", "QRZ: chave recusada ou assinatura necessária"),
     "qrz_err": ("QRZ : {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}", "QRZ: {e}"),
     "tester": ("Tester", "Test", "Probar", "Testen", "Prova", "Testar"),
+    "toast_clic": ("Clic : accorder le poste (et tourner l'antenne)",
+                   "Click: tune the radio (and turn the antenna)",
+                   "Clic: sintonizar el equipo (y girar la antena)",
+                   "Klick: Funkgerät abstimmen (und Antenne drehen)",
+                   "Clic: sintonizzare la radio (e ruotare l'antenna)",
+                   "Clique: sintonizar o rádio (e girar a antena)"),
     "toast_new": ("Nouveau pays !", "New one!", "¡País nuevo!", "Neues Gebiet!", "Paese nuovo!",
                   "Entidade nova!"),
     "toast_bande": ("Nouvelle bande", "New band", "Banda nueva", "Neues Band", "Banda nuova",
@@ -4380,6 +4386,9 @@ class App(tk.Tk):
         if s["comm"]:
             tk.Label(f, text=s["comm"][:50], font=F("txt", 8), fg=TEXTE_DIM,
                      bg=PANNEAU).pack(anchor="w")
+        if self.cfg.get("rig_actif", True):
+            tk.Label(f, text="▶ " + T("toast_clic"), font=F("txt", 8), fg=ACCENT,
+                     bg=PANNEAU).pack(anchor="w", pady=(4, 0))
         w.update_idletasks()
         self._toasts = [t for t in self._toasts if t.winfo_exists()]
         y = w.winfo_screenheight() - 70 - (w.winfo_height() + 10) * (len(self._toasts) + 1)
@@ -4392,9 +4401,13 @@ class App(tk.Tk):
                 self.fermer_compact()
             self.afficher_vue("dx")
             self.spot_choisi = s
+            self.preremplir_qso(s)
             self.maj_liste_spots()
             self.dessiner_spots_az()
             self.lift()
+            # comme un double-clic sur le spot : poste sur la fréquence (via OpsLog / rigctl)
+            # et antenne vers la station si un rotor est réglé
+            self.agir_spot(poste=True, rotor=True)
         for wid in [f] + list(f.winfo_children()):
             wid.bind("<Button-1>", ouvrir)
         w.after(15000, lambda: w.winfo_exists() and w.destroy())

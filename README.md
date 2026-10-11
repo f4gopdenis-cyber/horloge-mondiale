@@ -48,6 +48,8 @@ country time zones, greyline map and live HF propagation conditions.
   shown, hidden or limited to ≥ 10 dB.
 - **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens
   (since 2.4 the window always fits the screen: the maps shrink a little if needed).
+- **Clickable alerts** (new in 2.6): click an alert pop-up to tune the radio to the spot (through
+  OpsLog's CAT sharing), turn the antenna and pre-fill the QSO entry.
 - **Longer spot list** (new in 2.5): the list fills the available height — enlarge the window
   or go full screen to see more spots at once.
 - **Full screen** (new in 2.3): maximize the window (or press F11, Esc to leave) and the whole
