@@ -48,6 +48,8 @@ country time zones, greyline map and live HF propagation conditions.
   shown, hidden or limited to ≥ 10 dB.
 - **Display size** (new in 2.0): 100 %, 125 % or 150 % for large station screens
   (since 2.4 the window always fits the screen: the maps shrink a little if needed).
+- **Direct CAT without a logger** (new in 2.7): in ⚙ Settings → Radio, enter the Kenwood radio's
+  COM port (e.g. `COM5` or `COM5:115200`) instead of `127.0.0.1:4532` to tune it without OpsLog.
 - **Clickable alerts** (new in 2.6): click an alert pop-up to tune the radio to the spot (through
   OpsLog's CAT sharing), turn the antenna and pre-fill the QSO entry.
 - **Longer spot list** (new in 2.5): the list fills the available height — enlarge the window

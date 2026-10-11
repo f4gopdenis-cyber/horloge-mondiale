@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.6"
+VERSION = "2.7"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -927,14 +927,25 @@ TEXTES = {
                    "Elevación de la Luna en 24 h (UTC)", "Mondhöhe über 24 h (UTC)",
                    "Elevazione della Luna in 24 h (UTC)", "Elevação da Lua em 24 h (UTC)"),
     "en_cours": ("en cours", "now", "ahora", "jetzt", "in corso", "agora"),
-    "poste": ("Poste (Hamlib rigctl)", "Radio (Hamlib rigctl)", "Equipo (Hamlib rigctl)",
-              "Funkgerät (Hamlib rigctl)", "Radio (Hamlib rigctl)", "Rádio (Hamlib rigctl)"),
-    "rig_aide": ("Partage CAT de ton log (OpsLog, Log4OM…) en « Hamlib NET rigctl », port 4532",
-                 "Your logger's CAT sharing (OpsLog, Log4OM…) as “Hamlib NET rigctl”, port 4532",
-                 "CAT compartido de tu log (OpsLog, Log4OM…) en «Hamlib NET rigctl», puerto 4532",
-                 "CAT-Freigabe deines Logs (OpsLog, Log4OM…) als „Hamlib NET rigctl“, Port 4532",
-                 "Condivisione CAT del log (OpsLog, Log4OM…) come «Hamlib NET rigctl», porta 4532",
-                 "Compartilhamento CAT do log (OpsLog, Log4OM…) como «Hamlib NET rigctl», porta 4532"),
+    "poste": ("Poste (CAT)", "Radio (CAT)", "Equipo (CAT)", "Funkgerät (CAT)", "Radio (CAT)", "Rádio (CAT)"),
+    "rig_aide": ("Avec ton log : 127.0.0.1:4532 (partage CAT OpsLog, Log4OM… en « Hamlib NET rigctl »)\n"
+                 "Sans log : port COM du poste Kenwood, ex. COM5 ou COM5:115200 (vitesse du menu CAT du poste)",
+                 "With your logger: 127.0.0.1:4532 (OpsLog, Log4OM… CAT sharing as “Hamlib NET rigctl”)\n"
+                 "Without a logger: the Kenwood radio's COM port, e.g. COM5 or COM5:115200 (radio's CAT speed)",
+                 "Con tu log: 127.0.0.1:4532 (CAT compartido de OpsLog, Log4OM… en «Hamlib NET rigctl»)\n"
+                 "Sin log: puerto COM del equipo Kenwood, ej. COM5 o COM5:115200 (velocidad CAT del equipo)",
+                 "Mit Log: 127.0.0.1:4532 (CAT-Freigabe von OpsLog, Log4OM… als „Hamlib NET rigctl“)\n"
+                 "Ohne Log: COM-Port des Kenwood-Geräts, z. B. COM5 oder COM5:115200 (CAT-Geschwindigkeit)",
+                 "Con il log: 127.0.0.1:4532 (condivisione CAT di OpsLog, Log4OM… come «Hamlib NET rigctl»)\n"
+                 "Senza log: porta COM della radio Kenwood, es. COM5 o COM5:115200 (velocità CAT della radio)",
+                 "Com o log: 127.0.0.1:4532 (compartilhamento CAT do OpsLog, Log4OM… como «Hamlib NET rigctl»)\n"
+                 "Sem log: porta COM do rádio Kenwood, ex. COM5 ou COM5:115200 (velocidade CAT do rádio)"),
+    "err_com": ("Port {h} inaccessible : déjà ouvert par un autre logiciel (OpsLog ?) ou mauvais numéro",
+                "Port {h} unavailable: already open in another program (OpsLog?) or wrong number",
+                "Puerto {h} inaccesible: ya abierto por otro programa (¿OpsLog?) o número erróneo",
+                "Port {h} nicht verfügbar: schon von einem anderen Programm geöffnet (OpsLog?) oder falsche Nummer",
+                "Porta {h} non disponibile: già aperta da un altro programma (OpsLog?) o numero errato",
+                "Porta {h} indisponível: já aberta por outro programa (OpsLog?) ou número errado"),
     "rotor": ("Rotor", "Rotator", "Rotor", "Rotor", "Rotore", "Rotor"),
     "aucun": ("Aucun", "None", "Ninguno", "Keiner", "Nessuno", "Nenhum"),
     "rotor_aide": ("PST Rotator : activer la commande UDP (port 12000). GS-232A : adresse IP:port du contrôleur.",
@@ -2147,7 +2158,57 @@ def jouer_son_alerte(widget=None):
         widget.bell()
 
 
+RE_PORT_SERIE = re.compile(r"^\s*(COM\d+|/dev/\S+?)(?::(\d+))?\s*$", re.I)
+VITESSE_CAT_DEFAUT = 115200  # TS-990S / TS-890 : vitesse par défaut du port USB
+MODES_KENWOOD = {"LSB": "1", "USB": "2", "CW": "3", "FM": "4", "AM": "5", "RTTY": "6",
+                 "PKTLSB": "C", "PKTUSB": "D"}
+
+
+def est_port_serie(adresse):
+    return bool(RE_PORT_SERIE.match(adresse or ""))
+
+
+def envoyer_cat_kenwood(adresse, khz, mode):
+    """Accorde directement un poste Kenwood (TS-990S, TS-890…) par son port COM,
+    sans logiciel de log : FA = fréquence du VFO A, OM0 = mode (bande principale)."""
+    import serial  # pyserial
+    m = RE_PORT_SERIE.match(adresse)
+    port, vitesse = m.group(1), int(m.group(2) or VITESSE_CAT_DEFAUT)
+    if port.upper().startswith("COM"):
+        port = port.upper()
+    ser = serial.Serial()
+    ser.port, ser.baudrate = port, vitesse
+    ser.timeout, ser.write_timeout = 0.3, 2
+    ser.rtscts = ser.dsrdtr = False
+    # RTS et DTR servent souvent au PTT ou à la manipulation CW : les laisser au repos
+    ser.rts = ser.dtr = False
+    ser.open()
+    try:
+        ser.reset_input_buffer()
+        commandes = [f"FA{int(round(khz * 1000)):011d};"]
+        code = MODES_KENWOOD.get(mode_rigctl(khz, mode) or "")
+        if code:
+            commandes.append(f"OM0{code};")
+        for c in commandes:
+            ser.write(c.encode("ascii"))
+            ser.flush()
+            time.sleep(0.08)
+        reponse = ser.read(64).decode("ascii", "replace")
+    finally:
+        ser.close()
+    journal(f"CAT {port}@{vitesse} -> {' '.join(commandes)}  <- {reponse!r}")
+    if "?;" in reponse:
+        raise OSError(f"commande refusée par le poste : {reponse!r}")
+
+
 def envoyer_rig(adresse, khz, mode):
+    """Accorde le poste : port COM (CAT Kenwood direct) ou réseau (Hamlib NET rigctl)."""
+    if est_port_serie(adresse):
+        return envoyer_cat_kenwood(adresse, khz, mode)
+    return envoyer_rigctl(adresse, khz, mode)
+
+
+def envoyer_rigctl(adresse, khz, mode):
     """Accorde le poste via le protocole Hamlib NET rigctl (F = fréquence, M = mode).
     Tolérant : gère le « mode VFO » et les émulations (logiciels de log) qui ne répondent pas."""
     import socket
@@ -4040,7 +4101,8 @@ class App(tk.Tk):
                 except Exception as ex:
                     journal(f"{a} : ERREUR {ex!r}")
                     self._retours_action.append(
-                        (T("err_poste", h=rig) if a == "poste" else T("err_rotor", h=adr_rotor), ORANGE))
+                        ((T("err_com", h=rig.split(":")[0]) if est_port_serie(rig) else T("err_poste", h=rig))
+                         if a == "poste" else T("err_rotor", h=adr_rotor), ORANGE))
         if actions:
             threading.Thread(target=travail, daemon=True).start()
 
@@ -4814,8 +4876,8 @@ class App(tk.Tk):
         e_rig.pack(side="left", ipady=3)
         v_rig = tk.BooleanVar(value=self.cfg.get("rig_actif", True))
         Bascule(ligne_r, "", v_rig).pack(side="left", padx=(10, 0))
-        tk.Label(d, text=T("rig_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8)).grid(
-            row=5, column=1, sticky="w")
+        tk.Label(d, text=T("rig_aide"), bg=FOND, fg=TEXTE_DIM, font=F("txt", 8),
+                 justify="left").grid(row=5, column=1, sticky="w")
         # rotor
         etiquette(T("rotor"), 6)
         ligne_o = tk.Frame(d, bg=FOND)

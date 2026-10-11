@@ -50,6 +50,8 @@ fuseaux des pays, carte grayline et conditions de propagation HF en direct.
   (RBN) affichés, masqués ou limités à ≥ 10 dB.
 - **Taille d'affichage** (nouveau en 2.0) : 100 %, 125 % ou 150 % pour les grands écrans de station
   (depuis la 2.4 la fenêtre tient toujours dans l'écran : les cartes se réduisent un peu si besoin).
+- **CAT direct sans logiciel de log** (nouveau en 2.7) : dans ⚙ Réglages → Poste, indique le port COM
+  du poste Kenwood (ex. `COM5` ou `COM5:115200`) au lieu de `127.0.0.1:4532` pour le piloter sans OpsLog.
 - **Alertes cliquables** (nouveau en 2.6) : un clic sur une alerte accorde le poste sur le spot (via le
   partage CAT d'OpsLog), tourne l'antenne et préremplit la saisie QSO.
 - **Liste de spots plus longue** (nouveau en 2.5) : la liste remplit toute la hauteur disponible —
