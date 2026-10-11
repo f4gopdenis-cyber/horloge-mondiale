@@ -41,7 +41,7 @@ except ImportError:  # Python < 3.9
     raise SystemExit("Python 3.9 ou plus récent est nécessaire.")
 
 APP = "Horloge mondiale"
-VERSION = "2.7"
+VERSION = "2.8"
 AUTEUR = "Denis F4GOP"
 URL_GITHUB = "https://github.com/f4gopdenis-cyber/horloge-mondiale"
 URL_QRZ = "https://www.qrz.com/db/F4GOP"
@@ -940,12 +940,26 @@ TEXTES = {
                  "Senza log: porta COM della radio Kenwood, es. COM5 o COM5:115200 (velocità CAT della radio)",
                  "Com o log: 127.0.0.1:4532 (compartilhamento CAT do OpsLog, Log4OM… como «Hamlib NET rigctl»)\n"
                  "Sem log: porta COM do rádio Kenwood, ex. COM5 ou COM5:115200 (velocidade CAT do rádio)"),
-    "err_com": ("Port {h} inaccessible : déjà ouvert par un autre logiciel (OpsLog ?) ou mauvais numéro",
-                "Port {h} unavailable: already open in another program (OpsLog?) or wrong number",
-                "Puerto {h} inaccesible: ya abierto por otro programa (¿OpsLog?) o número erróneo",
-                "Port {h} nicht verfügbar: schon von einem anderen Programm geöffnet (OpsLog?) oder falsche Nummer",
-                "Porta {h} non disponibile: già aperta da un altro programma (OpsLog?) o numero errato",
-                "Porta {h} indisponível: já aberta por outro programa (OpsLog?) ou número errado"),
+    "err_com_occupe": ("Port {h} déjà utilisé par un autre logiciel (OpsLog, WSJT-X, ARCP…)",
+                       "Port {h} already in use by another program (OpsLog, WSJT-X, ARCP…)",
+                       "Puerto {h} ya en uso por otro programa (OpsLog, WSJT-X, ARCP…)",
+                       "Port {h} wird schon von einem anderen Programm benutzt (OpsLog, WSJT-X, ARCP…)",
+                       "Porta {h} già usata da un altro programma (OpsLog, WSJT-X, ARCP…)",
+                       "Porta {h} já em uso por outro programa (OpsLog, WSJT-X, ARCP…)"),
+    "err_com_absent": ("Port {h} introuvable : vérifie le numéro dans le Gestionnaire de périphériques",
+                       "Port {h} not found: check the number in Device Manager",
+                       "Puerto {h} no encontrado: comprueba el número en el Administrador de dispositivos",
+                       "Port {h} nicht gefunden: Nummer im Geräte-Manager prüfen",
+                       "Porta {h} non trovata: controlla il numero in Gestione dispositivi",
+                       "Porta {h} não encontrada: verifique o número no Gerenciador de Dispositivos"),
+    "err_com_refuse": ("Le poste a refusé la commande sur {h} : est-ce le port « Enhanced » ?",
+                       "The radio rejected the command on {h}: is it the “Enhanced” port?",
+                       "El equipo rechazó la orden en {h}: ¿es el puerto «Enhanced»?",
+                       "Das Gerät lehnt den Befehl auf {h} ab: ist es der „Enhanced“-Port?",
+                       "La radio ha rifiutato il comando su {h}: è la porta «Enhanced»?",
+                       "O rádio recusou o comando em {h}: é a porta «Enhanced»?"),
+    "err_com_autre": ("Port {h} : {e}", "Port {h}: {e}", "Puerto {h}: {e}", "Port {h}: {e}",
+                      "Porta {h}: {e}", "Porta {h}: {e}"),
     "rotor": ("Rotor", "Rotator", "Rotor", "Rotor", "Rotore", "Rotor"),
     "aucun": ("Aucun", "None", "Ninguno", "Keiner", "Nessuno", "Nenhum"),
     "rotor_aide": ("PST Rotator : activer la commande UDP (port 12000). GS-232A : adresse IP:port du contrôleur.",
@@ -2168,37 +2182,153 @@ def est_port_serie(adresse):
     return bool(RE_PORT_SERIE.match(adresse or ""))
 
 
+class ErreurCAT(OSError):
+    """Erreur de port série classée : 'occupe', 'absent' ou 'autre'."""
+    def __init__(self, genre, detail=""):
+        super().__init__(f"{genre}: {detail}")
+        self.genre, self.detail = genre, detail
+
+
+class PortSerieWin:
+    """Port série Windows minimal par l'API Win32 (ctypes) : aucune bibliothèque
+    externe nécessaire. RTS et DTR restent au repos (ils servent souvent au PTT)."""
+
+    def __init__(self, port, vitesse):
+        import ctypes
+        from ctypes import wintypes
+        self.ct = ctypes
+        k = self.k = ctypes.WinDLL("kernel32", use_last_error=True)
+        k.CreateFileW.restype = wintypes.HANDLE
+        k.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                                  wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        H, P, D = wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD
+        signatures = {"GetCommState": [H, P], "SetCommState": [H, P], "SetCommTimeouts": [H, P],
+                      "PurgeComm": [H, D], "EscapeCommFunction": [H, D], "CloseHandle": [H],
+                      "FlushFileBuffers": [H], "WriteFile": [H, ctypes.c_char_p, D, P, P],
+                      "ReadFile": [H, P, D, P, P]}
+        for nom, args in signatures.items():
+            getattr(k, nom).restype = wintypes.BOOL
+            getattr(k, nom).argtypes = args
+        GENERIC_RW, OPEN_EXISTING = 0xC0000000, 3
+        self.h = k.CreateFileW("\\\\.\\" + port, GENERIC_RW, 0, None, OPEN_EXISTING, 0, None)
+        if self.h in (None, wintypes.HANDLE(-1).value, ctypes.c_void_p(-1).value):
+            err = ctypes.get_last_error()
+            genre = "occupe" if err == 5 else ("absent" if err in (2, 3, 123) else "autre")
+            raise ErreurCAT(genre, f"Win32 {err} {ctypes.FormatError(err).strip()}")
+
+        class DCB(ctypes.Structure):
+            _fields_ = [("DCBlength", wintypes.DWORD), ("BaudRate", wintypes.DWORD),
+                        ("flags", wintypes.DWORD), ("wReserved", wintypes.WORD),
+                        ("XonLim", wintypes.WORD), ("XoffLim", wintypes.WORD),
+                        ("ByteSize", ctypes.c_ubyte), ("Parity", ctypes.c_ubyte),
+                        ("StopBits", ctypes.c_ubyte), ("XonChar", ctypes.c_char),
+                        ("XoffChar", ctypes.c_char), ("ErrorChar", ctypes.c_char),
+                        ("EofChar", ctypes.c_char), ("EvtChar", ctypes.c_char),
+                        ("wReserved1", wintypes.WORD)]
+
+        class TIMEOUTS(ctypes.Structure):
+            _fields_ = [(n, wintypes.DWORD) for n in (
+                "ReadIntervalTimeout", "ReadTotalTimeoutMultiplier", "ReadTotalTimeoutConstant",
+                "WriteTotalTimeoutMultiplier", "WriteTotalTimeoutConstant")]
+
+        dcb = DCB()
+        dcb.DCBlength = ctypes.sizeof(DCB)
+        k.GetCommState(self.h, ctypes.byref(dcb))
+        dcb.BaudRate, dcb.ByteSize, dcb.Parity, dcb.StopBits = vitesse, 8, 0, 0  # 8N1
+        dcb.flags = 0x0001  # fBinary seul : pas de contrôle de flux, DTR et RTS désactivés
+        if not k.SetCommState(self.h, ctypes.byref(dcb)):
+            err = ctypes.get_last_error()
+            self.close()
+            raise ErreurCAT("autre", f"SetCommState Win32 {err} {ctypes.FormatError(err).strip()}")
+        to = TIMEOUTS(50, 0, 300, 0, 2000)
+        k.SetCommTimeouts(self.h, ctypes.byref(to))
+        k.EscapeCommFunction(self.h, 4)  # CLRRTS
+        k.EscapeCommFunction(self.h, 6)  # CLRDTR
+        k.PurgeComm(self.h, 0x000F)
+
+    def write(self, donnees):
+        from ctypes import wintypes
+        n = wintypes.DWORD()
+        if not self.k.WriteFile(self.h, donnees, len(donnees), self.ct.byref(n), None):
+            err = self.ct.get_last_error()
+            raise ErreurCAT("autre", f"WriteFile Win32 {err}")
+        self.k.FlushFileBuffers(self.h)
+
+    def read(self, taille):
+        from ctypes import wintypes
+        tampon = self.ct.create_string_buffer(taille)
+        n = wintypes.DWORD()
+        self.k.ReadFile(self.h, tampon, taille, self.ct.byref(n), None)
+        return tampon.raw[:n.value]
+
+    def close(self):
+        if self.h:
+            self.k.CloseHandle(self.h)
+            self.h = None
+
+
+class PortSeriePyserial:
+    """Même interface avec pyserial (Linux, macOS, ou Windows si disponible)."""
+
+    def __init__(self, port, vitesse):
+        import serial
+        ser = self.ser = serial.Serial()
+        ser.port, ser.baudrate = port, vitesse
+        ser.timeout, ser.write_timeout = 0.3, 2
+        ser.rtscts = ser.dsrdtr = False
+        ser.rts = ser.dtr = False  # RTS et DTR au repos (PTT / manipulation CW)
+        try:
+            ser.open()
+        except Exception as ex:
+            t = repr(ex)
+            genre = ("occupe" if "PermissionError" in t or "Errno 13" in t or "Errno 16" in t
+                     else "absent" if "FileNotFoundError" in t or "Errno 2]" in t else "autre")
+            raise ErreurCAT(genre, str(ex)[:120])
+        ser.reset_input_buffer()
+
+    def write(self, donnees):
+        self.ser.write(donnees)
+        self.ser.flush()
+
+    def read(self, taille):
+        return self.ser.read(taille)
+
+    def close(self):
+        self.ser.close()
+
+
+def ouvrir_port_serie(port, vitesse):
+    if os.name == "nt":
+        return PortSerieWin(port, vitesse)
+    return PortSeriePyserial(port, vitesse)
+
+
 def envoyer_cat_kenwood(adresse, khz, mode):
     """Accorde directement un poste Kenwood (TS-990S, TS-890…) par son port COM,
     sans logiciel de log : FA = fréquence du VFO A, OM0 = mode (bande principale)."""
-    import serial  # pyserial
     m = RE_PORT_SERIE.match(adresse)
     port, vitesse = m.group(1), int(m.group(2) or VITESSE_CAT_DEFAUT)
     if port.upper().startswith("COM"):
         port = port.upper()
-    ser = serial.Serial()
-    ser.port, ser.baudrate = port, vitesse
-    ser.timeout, ser.write_timeout = 0.3, 2
-    ser.rtscts = ser.dsrdtr = False
-    # RTS et DTR servent souvent au PTT ou à la manipulation CW : les laisser au repos
-    ser.rts = ser.dtr = False
-    ser.open()
+    commandes = [f"FA{int(round(khz * 1000)):011d};"]
+    code = MODES_KENWOOD.get(mode_rigctl(khz, mode) or "")
+    if code:
+        commandes.append(f"OM0{code};")
     try:
-        ser.reset_input_buffer()
-        commandes = [f"FA{int(round(khz * 1000)):011d};"]
-        code = MODES_KENWOOD.get(mode_rigctl(khz, mode) or "")
-        if code:
-            commandes.append(f"OM0{code};")
+        ser = ouvrir_port_serie(port, vitesse)
+    except ErreurCAT as ex:
+        journal(f"CAT {port}@{vitesse} : ouverture impossible ({ex.genre}) {ex.detail}")
+        raise
+    try:
         for c in commandes:
             ser.write(c.encode("ascii"))
-            ser.flush()
             time.sleep(0.08)
         reponse = ser.read(64).decode("ascii", "replace")
     finally:
         ser.close()
     journal(f"CAT {port}@{vitesse} -> {' '.join(commandes)}  <- {reponse!r}")
     if "?;" in reponse:
-        raise OSError(f"commande refusée par le poste : {reponse!r}")
+        raise ErreurCAT("refuse", reponse)
 
 
 def envoyer_rig(adresse, khz, mode):
@@ -4100,9 +4230,16 @@ class App(tk.Tk):
                         self._retours_action.append((T("ok_rotor", a=f"{s['az']:.0f}"), VERT))
                 except Exception as ex:
                     journal(f"{a} : ERREUR {ex!r}")
-                    self._retours_action.append(
-                        ((T("err_com", h=rig.split(":")[0]) if est_port_serie(rig) else T("err_poste", h=rig))
-                         if a == "poste" else T("err_rotor", h=adr_rotor), ORANGE))
+                    if a != "poste":
+                        texte = T("err_rotor", h=adr_rotor)
+                    elif not est_port_serie(rig):
+                        texte = T("err_poste", h=rig)
+                    else:
+                        port = rig.split(":")[0].strip().upper()
+                        genre = getattr(ex, "genre", "autre")
+                        texte = (T("err_com_" + genre, h=port) if genre != "autre"
+                                 else T("err_com_autre", h=port, e=getattr(ex, "detail", "") or ex))
+                    self._retours_action.append((texte, ORANGE))
         if actions:
             threading.Thread(target=travail, daemon=True).start()
 
